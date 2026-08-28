@@ -5,13 +5,15 @@ import type {
   ValidationResult,
 } from '../types/totym';
 import { TOTYM_RULESET_V2 } from '../data/totymRuleset';
-import { CARD_BY_ID } from '../data/totymCards';
 
 const rules = TOTYM_RULESET_V2.legalDeckRules;
 
-const resolveCard = (dc: DeckCard): TotymCard | undefined => CARD_BY_ID[dc.cardId];
+export type CardLookup = Record<string, TotymCard>;
 
-export function summarizeDeck(cards: DeckCard[]): CountSummary {
+export function summarizeDeck(
+  cards: DeckCard[],
+  cardLookup: CardLookup,
+): CountSummary {
   const counts: CountSummary = {
     total: 0,
     creatures: 0,
@@ -22,7 +24,7 @@ export function summarizeDeck(cards: DeckCard[]): CountSummary {
   };
 
   for (const dc of cards) {
-    const card = resolveCard(dc);
+    const card = cardLookup[dc.cardId];
     if (!card) continue;
     counts.total += dc.quantity;
     switch (card.cardType) {
@@ -45,10 +47,13 @@ export function summarizeDeck(cards: DeckCard[]): CountSummary {
   return counts;
 }
 
-export function validateDeck(cards: DeckCard[]): ValidationResult {
+export function validateDeck(
+  cards: DeckCard[],
+  cardLookup: CardLookup,
+): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const counts = summarizeDeck(cards);
+  const counts = summarizeDeck(cards, cardLookup);
 
   if (counts.total !== rules.deckSize) {
     errors.push(
@@ -79,7 +84,7 @@ export function validateDeck(cards: DeckCard[]): ValidationResult {
   const seenCreatures = new Set<string>();
   let duplicateCreatures = 0;
   for (const dc of cards) {
-    const card = resolveCard(dc);
+    const card = cardLookup[dc.cardId];
     if (!card) continue;
     if (card.cardType === 'creature') {
       if (seenCreatures.has(card.id)) {
@@ -95,7 +100,7 @@ export function validateDeck(cards: DeckCard[]): ValidationResult {
   }
 
   for (const dc of cards) {
-    const card = resolveCard(dc);
+    const card = cardLookup[dc.cardId];
     if (!card || card.cardType !== 'tarot') continue;
     if (card.arcanaType === 'minor' && dc.quantity > rules.minorArcanaCopyLimit) {
       errors.push(

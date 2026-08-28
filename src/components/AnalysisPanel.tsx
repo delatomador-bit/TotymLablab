@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import type { Clan, DeckCard, PlayerMode, TotymCard, ValidationResult } from '../types/totym';
-import { CARD_BY_ID } from '../data/totymCards';
 import { TOTYM_RULESET_V2 } from '../data/totymRuleset';
 import { formatWarningsFor } from '../lib/formatRules';
+import type { CardLookup } from '../lib/deckValidator';
 import {
   CLAN_COLORS,
   CLAN_LABELS,
@@ -16,18 +16,19 @@ interface Props {
   mode: PlayerMode;
   onModeChange: (mode: PlayerMode) => void;
   validationResult: ValidationResult;
+  cardLookup: CardLookup;
 }
 
 const CLAN_ORDER: Clan[] = ['berserkers', 'druids', 'bards', 'zealots', 'mystics'];
 
-export default function AnalysisPanel({ cards, mode, onModeChange, validationResult }: Props) {
-  const fmtWarnings = useMemo(() => formatWarningsFor(cards, mode), [cards, mode]);
+export default function AnalysisPanel({ cards, mode, onModeChange, validationResult, cardLookup }: Props) {
+  const fmtWarnings = useMemo(() => formatWarningsFor(cards, mode, cardLookup), [cards, mode, cardLookup]);
 
   const creatures = useMemo(
     () => cards
-      .map((dc) => ({ dc, card: CARD_BY_ID[dc.cardId] }))
+      .map((dc) => ({ dc, card: cardLookup[dc.cardId] }))
       .filter((r): r is { dc: DeckCard; card: TotymCard } => !!r.card && r.card.cardType === 'creature'),
-    [cards],
+    [cards, cardLookup],
   );
 
   const demand = useMemo(() => {

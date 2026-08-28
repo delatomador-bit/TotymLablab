@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ArcanaType, TarotSuit, TargetType, TotymCard } from '../types/totym';
-import { ALL_CARDS, isGenericCard } from '../data/totymCards';
-import { CATALOG_DATA_STATUS } from '../data/totymRuleset';
+import { isGenericCard } from '../data/totymCards';
 import {
   CLAN_COLORS,
   CLAN_LABELS,
@@ -10,12 +9,22 @@ import {
 } from '../lib/labels';
 
 interface Props {
+  catalogCards: TotymCard[];
+  genericCards: TotymCard[];
+  catalogStatus: string;
   onAddCard: (cardId: string) => void;
+  onOpenCatalogImport: () => void;
 }
 
 type TypeFilter = 'all' | 'creature' | 'tarot' | 'utility';
 
-export default function CardLibrary({ onAddCard }: Props) {
+export default function CardLibrary({
+  catalogCards,
+  genericCards,
+  catalogStatus,
+  onAddCard,
+  onOpenCatalogImport,
+}: Props) {
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [arcanaFilter, setArcanaFilter] = useState<ArcanaType | 'all'>('all');
@@ -23,9 +32,14 @@ export default function CardLibrary({ onAddCard }: Props) {
   const [targetFilter, setTargetFilter] = useState<TargetType | 'any'>('any');
   const [detailCard, setDetailCard] = useState<TotymCard | null>(null);
 
+  const allCards = useMemo(
+    () => [...catalogCards, ...genericCards],
+    [catalogCards, genericCards],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return ALL_CARDS.filter((c) => {
+    return allCards.filter((c) => {
       if (q && !c.name.toLowerCase().includes(q)) return false;
       if (typeFilter === 'creature' && c.cardType !== 'creature') return false;
       if (typeFilter === 'tarot' && c.cardType !== 'tarot') return false;
@@ -38,7 +52,7 @@ export default function CardLibrary({ onAddCard }: Props) {
       }
       return true;
     });
-  }, [query, typeFilter, arcanaFilter, suitFilter, targetFilter]);
+  }, [allCards, query, typeFilter, arcanaFilter, suitFilter, targetFilter]);
 
   return (
     <>
@@ -102,8 +116,14 @@ export default function CardLibrary({ onAddCard }: Props) {
             </>
           ) : null}
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-            <span className="badge badge-seed" title={CATALOG_DATA_STATUS.message}>Seed data only</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', gap: 6 }}>
+            <span className="badge badge-seed">{catalogStatus}</span>
+            <button className="btn btn-sm btn-ghost" onClick={onOpenCatalogImport}>
+              Import Full Catalog JSON
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{filtered.length} shown</span>
           </div>
 
@@ -156,7 +176,7 @@ export default function CardLibrary({ onAddCard }: Props) {
 
 function CardDetailModal({ card, onClose }: { card: TotymCard; onClose: () => void }) {
   const generic = isGenericCard(card);
-  const sourceCategory = generic ? 'Deck-count utility' : 'Revised card workbook';
+  const sourceCategory = generic ? 'Deck-count placeholder — not a catalog card.' : 'Revised card workbook';
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={`${card.name} details`}>

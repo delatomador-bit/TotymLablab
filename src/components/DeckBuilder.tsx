@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import type { DeckCard, TotymCard } from '../types/totym';
-import { CARD_BY_ID, isGenericCard } from '../data/totymCards';
+import { isGenericCard } from '../data/totymCards';
 import {
   decklistText,
   exportDeckJSON,
   importDeckJSON,
   type ImportResult,
 } from '../lib/deckExport';
-import { summarizeDeck } from '../lib/deckValidator';
+import { summarizeDeck, type CardLookup } from '../lib/deckValidator';
 import { TOTYM_RULESET_V2 } from '../data/totymRuleset';
 import { CLAN_COLORS, CLAN_LABELS } from '../lib/labels';
 
 interface Props {
   deckName: string;
   cards: DeckCard[];
+  cardLookup: CardLookup;
   onRename: (name: string) => void;
   onSetQuantity: (cardId: string, quantity: number) => void;
   onRemove: (cardId: string) => void;
@@ -35,6 +36,7 @@ const GROUP_LABELS: Record<TotymCard['cardType'], string> = {
 export default function DeckBuilder({
   deckName,
   cards,
+  cardLookup,
   onRename,
   onSetQuantity,
   onRemove,
@@ -44,17 +46,17 @@ export default function DeckBuilder({
   onToast,
 }: Props) {
   const [showImport, setShowImport] = useState(false);
-  const counts = summarizeDeck(cards);
+  const counts = summarizeDeck(cards, cardLookup);
 
   const grouped = GROUP_ORDER.map((type) => ({
     type,
     items: cards
-      .map((dc) => ({ dc, card: CARD_BY_ID[dc.cardId] }))
-      .filter((r) => r.card && r.card.cardType === type),
+      .map((dc) => ({ dc, card: cardLookup[dc.cardId] }))
+      .filter((r): r is { dc: DeckCard; card: TotymCard } => !!r.card && r.card.cardType === type),
   })).filter((g) => g.items.length > 0);
 
   const handleCopy = async () => {
-    const text = decklistText(deckName, cards);
+    const text = decklistText(deckName, cards, cardLookup);
     try {
       await navigator.clipboard.writeText(text);
       onToast('Decklist copied to clipboard');
@@ -185,6 +187,7 @@ export default function DeckBuilder({
 
       {showImport && (
         <ImportDialog
+          cardLookup={cardLookup}
           onClose={() => setShowImport(false)}
           onImport={(result) => {
             onImport(result.name!, result.cards!);
@@ -198,9 +201,11 @@ export default function DeckBuilder({
 }
 
 function ImportDialog({
+  cardLookup,
   onClose,
   onImport,
 }: {
+  cardLookup: CardLookup;
   onClose: () => void;
   onImport: (result: ImportResult) => void;
 }) {
@@ -208,7 +213,7 @@ function ImportDialog({
   const [error, setError] = useState<string | null>(null);
 
   const handleImport = () => {
-    const result = importDeckJSON(text);
+    const result = importDeckJSON(text, cardLookup);
     if (!result.ok) {
       setError(result.error ?? 'Unknown error');
       return;
@@ -246,7 +251,7 @@ function ImportDialog({
               className="dialog-textarea"
               value={text}
               onChange={(e) => { setText(e.target.value); setError(null); }}
-              placeholder='{"name":"…","format":"traditional","cards":[…]}' 
+              placeholder='{"name":"…","format":"traditional","cards":[…]}'
               aria-label="Paste deck JSON"
             />
           </div>

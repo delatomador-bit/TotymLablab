@@ -1,5 +1,5 @@
-import type { DeckCard, TotymDeck } from '../types/totym';
-import { CARD_BY_ID } from '../data/totymCards';
+import type { DeckCard, TotymCard, TotymDeck } from '../types/totym';
+import type { CardLookup } from './deckValidator';
 
 export function exportDeckJSON(name: string, cards: DeckCard[]): string {
   const deck: TotymDeck = {
@@ -17,7 +17,10 @@ export interface ImportResult {
   error?: string;
 }
 
-export function importDeckJSON(raw: string): ImportResult {
+export function importDeckJSON(
+  raw: string,
+  cardLookup: CardLookup,
+): ImportResult {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -55,10 +58,10 @@ export function importDeckJSON(raw: string): ImportResult {
         error: `Quantity for ${e.cardId} must be a non-negative integer.`,
       };
     }
-    if (!CARD_BY_ID[e.cardId]) {
+    if (!cardLookup[e.cardId]) {
       return {
         ok: false,
-        error: `Unknown card ID "${e.cardId}" — not in the seed catalog.`,
+        error: `Unknown card ID "${e.cardId}" — not in the active catalog.`,
       };
     }
     cards.push({ cardId: e.cardId, quantity: e.quantity });
@@ -67,7 +70,11 @@ export function importDeckJSON(raw: string): ImportResult {
   return { ok: true, name, cards };
 }
 
-export function decklistText(name: string, cards: DeckCard[]): string {
+export function decklistText(
+  name: string,
+  cards: DeckCard[],
+  cardLookup: CardLookup,
+): string {
   const lines: string[] = [`// ${name}`, '// Traditional Mode', ''];
   const order: Record<string, number> = {
     creature: 0,
@@ -76,8 +83,8 @@ export function decklistText(name: string, cards: DeckCard[]): string {
     imposter: 3,
   };
   const rows = cards
-    .map((dc) => ({ dc, card: CARD_BY_ID[dc.cardId] }))
-    .filter((r) => r.card)
+    .map((dc) => ({ dc, card: cardLookup[dc.cardId] }))
+    .filter((r): r is { dc: DeckCard; card: TotymCard } => !!r.card)
     .sort((a, b) => (order[a.card.cardType] ?? 9) - (order[b.card.cardType] ?? 9));
 
   let lastType = '';

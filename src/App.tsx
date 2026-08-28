@@ -1,11 +1,18 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { DeckCard, PlayerMode } from './types/totym';
+import type { DeckCard, PlayerMode, TotymCard } from './types/totym';
 import { TOTYM_RULESET_V2, CATALOG_DATA_STATUS } from './data/totymRuleset';
+import {
+  SEED_CARDS,
+  GENERIC_CARDS,
+  getCatalogCards,
+  buildCardByIdMap,
+} from './data/totymCards';
 import { TEST_DECK_CARDS, TEST_DECK_NAME } from './data/testDeck';
 import { validateDeck } from './lib/deckValidator';
 import CardLibrary from './components/CardLibrary';
 import DeckBuilder from './components/DeckBuilder';
 import AnalysisPanel from './components/AnalysisPanel';
+import CatalogImportDialog from './components/CatalogImportDialog';
 
 const DEFAULT_DECK_NAME = 'Untitled Lab Deck';
 
@@ -17,6 +24,23 @@ export default function App() {
   const [mode, setMode] = useState<PlayerMode>('1v1');
   const [mobileTab, setMobileTab] = useState<MobileTab>('library');
   const [toast, setToast] = useState<string | null>(null);
+  const [importedCatalog, setImportedCatalog] = useState<TotymCard[] | null>(null);
+  const [showCatalogImport, setShowCatalogImport] = useState(false);
+
+  const catalogCards = useMemo(
+    () => getCatalogCards(importedCatalog),
+    [importedCatalog],
+  );
+
+  const cardLookup = useMemo(
+    () => buildCardByIdMap(catalogCards, GENERIC_CARDS),
+    [catalogCards],
+  );
+
+  const isFullCatalog = importedCatalog !== null && importedCatalog.length > 0;
+  const catalogStatus = isFullCatalog
+    ? `Full factual catalog · ${importedCatalog!.length} cards · Session only`
+    : `Seed data only · ${SEED_CARDS.length} factual cards`;
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -70,7 +94,30 @@ export default function App() {
     showToast('Deck imported');
   }, [showToast]);
 
-  const validationResult = useMemo(() => validateDeck(cards), [cards]);
+  const applyCatalog = useCallback(
+    (newCards: TotymCard[]) => {
+      setImportedCatalog(newCards);
+      setShowCatalogImport(false);
+      showToast(`Full catalog loaded: ${newCards.length} records`);
+    },
+    [showToast],
+  );
+
+  const returnToSeed = useCallback(() => {
+    setImportedCatalog(null);
+    setShowCatalogImport(false);
+    showToast('Returned to seed catalog');
+  }, [showToast]);
+
+  const validationResult = useMemo(
+    () => validateDeck(cards, cardLookup),
+    [cards, cardLookup],
+  );
+
+  const orphanedCardIds = useMemo(
+    () => cards.filter((dc) => !cardLookup[dc.cardId]).map((dc) => dc.cardId),
+    [cards, cardLookup],
+  );
 
   return (
     <div className="app">
@@ -100,8 +147,15 @@ export default function App() {
         <section className="col" data-active={mobileTab === 'library'} aria-label="Card library">
           <div className="col-head">
             <h2>Card Library</h2>
+            <span className="badge badge-seed">{catalogStatus}</span>
           </div>
-          <CardLibrary onAddCard={addCard} />
+          <CardLibrary
+            catalogCards={catalogCards}
+            genericCards={GENERIC_CARDS}
+            catalogStatus={catalogStatus}
+            onAddCard={addCard}
+            onOpenCatalogImport={() => setShowCatalogImport(true)}
+          />
         </section>
 
         <section className="col" data-active={mobileTab === 'deck'} aria-label="Active deck">
@@ -111,6 +165,7 @@ export default function App() {
           <DeckBuilder
             deckName={deckName}
             cards={cards}
+            cardLookup={cardLookup}
             onRename={setDeckName}
             onSetQuantity={setQuantity}
             onRemove={removeCard}
@@ -130,11 +185,26 @@ export default function App() {
             mode={mode}
             onModeChange={setMode}
             validationResult={validationResult}
+            cardLookup={cardLookup}
           />
         </section>
       </main>
 
-      {toast && <div className="toast" role="status">{toast}</div>}
+      {showCatalogImport && (
+        <CatalogImportDialog
+          onClose={() => setShowCatalogImport(false)}
+          onApply={applyCatalog}
+          onReturnToSeed={returnToSeed}
+        />
+      )}
+
+      {orphanedCardIds.length > 0 && (
+        <div className="toast" role="status" style={{ borderColor: 'rgba(224,107,91,0.4)', color: 'var(--error)' }}>
+          Warning: {orphanedCardIds.length} deck card{orphanedCardIds.length === 1 ? '' : 's'} no longer in the active catalog
+        </div>
+      )}
+
+      {toast && !orphanedCardIds.length && <div className="toast" role="status">{toast}</div>}
     </div>
   );
 }

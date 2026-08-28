@@ -1,14 +1,15 @@
 import type { DeckCard, FormatWarning, PlayerMode } from '../types/totym';
-import { CARD_BY_ID } from '../data/totymCards';
+import type { CardLookup } from './deckValidator';
 
 export function formatWarningsFor(
   cards: DeckCard[],
   mode: PlayerMode,
+  cardLookup: CardLookup,
 ): FormatWarning[] {
   const warnings: FormatWarning[] = [];
 
   for (const dc of cards) {
-    const card = CARD_BY_ID[dc.cardId];
+    const card = cardLookup[dc.cardId];
     if (!card || card.cardType !== 'tarot') continue;
 
     if (mode === '1v1' && card.targetType === 'two_opponents') {

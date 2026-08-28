@@ -300,3 +300,19 @@ export const CARD_BY_ID: Record<string, TotymCard> = Object.fromEntries(
 
 export const isGenericCard = (card: TotymCard): boolean =>
   card.id === 'GEN-WORSHIP' || card.id === 'GEN-IMPOSTER';
+
+export function getCatalogCards(importedCards?: TotymCard[] | null): TotymCard[] {
+  if (importedCards && importedCards.length > 0) {
+    return importedCards;
+  }
+  return SEED_CARDS;
+}
+
+export function buildCardByIdMap(
+  catalogCards: TotymCard[],
+  genericCards: TotymCard[],
+): Record<string, TotymCard> {
+  return Object.fromEntries(
+    [...catalogCards, ...genericCards].map((c) => [c.id, c]),
+  );
+}
