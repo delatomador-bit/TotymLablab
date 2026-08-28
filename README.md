@@ -74,8 +74,29 @@ The uploaded JSON must have this exact top-level structure:
 
 ## What it does not do yet
 
-- Does not calculate meta strength or strategy scores.
 - Does not auto-generate decks.
 - Does not persist data across browser sessions.
 - Does not connect to external APIs, AI, or Supabase.
 - Does not support `.xlsx` uploads directly.
+
+## Heuristic Strategy Scoring
+
+The Strategy Profile section in the Analysis panel provides transparent, deterministic heuristic scores based on:
+
+- Current deck composition (Creature, Tarot, Worship, Imposter counts).
+- Official TOTYM Rules v2.0 format and legality considerations.
+- Factual Creature requirements, Blessings, and Immunities from the active catalog.
+- Factual Tarot targets and effect text, classified into text-derived categories.
+- Selected player mode (1v1, 3-player, 4-player).
+
+Five supporting scores are computed:
+
+1. **Ascension Consistency** — estimates progress toward locking and Ascending.
+2. **Disruption & Control** — density of visible disruption and action-denial tools.
+3. **Resilience & Recovery** — visible recovery, protection, and adaptability tools.
+4. **Format Fit** — whether the Tarot package is structurally usable in the selected mode.
+5. **Dead-Card Risk** — known structural or rules-based risks (higher is worse).
+
+An Overall Lab Score combines these with player-mode-adjusted weights, reduced by Dead-Card Risk. Illegal decks are labeled "Provisional" and capped at 49.
+
+All weights are editable in `src/config/strategyScoringWeights.ts`. Scores are tunable heuristics, not official ratings, win-rate predictions, or guaranteed outcomes.

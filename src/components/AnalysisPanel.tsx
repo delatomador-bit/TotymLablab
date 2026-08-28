@@ -12,6 +12,8 @@ import {
 import LegalityPanel from './LegalityPanel';
 import CreatureCorePanel from './CreatureCorePanel';
 import TarotPackagePanel from './TarotPackagePanel';
+import StrategyScorePanel from './StrategyScorePanel';
+import { scoreHeuristic } from '../lib/strategyScorer';
 
 interface Props {
   deck: TotymDeck;
@@ -43,6 +45,11 @@ export default function AnalysisPanel({
   const tarotProfile = useMemo(
     () => analyzeTarotPackage(deck, activeCards, mode),
     [deck, activeCards, mode],
+  );
+
+  const strategyAnalysis = useMemo(
+    () => scoreHeuristic(deck, activeCards, mode, validationResult, cardLookup),
+    [deck, activeCards, mode, validationResult, cardLookup],
   );
 
   return (
@@ -99,12 +106,13 @@ export default function AnalysisPanel({
 
       <TarotPackagePanel profile={tarotProfile} />
 
+      <StrategyScorePanel analysis={strategyAnalysis} />
+
       <div className="subsection">
-        <div className="subsection-head">Strategy scoring</div>
+        <div className="subsection-head">Swap suggestions</div>
         <p style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8 }}>
-          Next: Strategy scoring will combine the factual Creature Core and
-          text-derived Tarot Package profiles with player-count rules and
-          confirmed scenario tests.
+          Next: swap suggestions will use this profile to propose small,
+          explainable adjustments.
         </p>
         <div className="coming-soon">
           <div className="coming-soon-list">

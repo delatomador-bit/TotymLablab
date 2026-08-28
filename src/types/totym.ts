@@ -203,3 +203,66 @@ export interface TarotPackageProfile {
   factualSummary: string[];
   analysisNotes: string[];
 }
+
+export type StrategyScoreKey =
+  | 'ascensionConsistency'
+  | 'disruptionControl'
+  | 'resilienceRecovery'
+  | 'formatFit'
+  | 'deadCardRisk'
+  | 'overallLabScore';
+
+export type ScoreBand = 'early' | 'developing' | 'solid' | 'strong';
+
+export interface StrategyScore {
+  key: StrategyScoreKey;
+  label: string;
+  score: number;
+  band: ScoreBand;
+  explanation: string;
+  contributingFactors: string[];
+  cautionFactors: string[];
+}
+
+export interface HeuristicAnalysis {
+  rulesetId: string;
+  selectedMode: PlayerMode;
+  isLegal: boolean;
+  isProvisional: boolean;
+  overallLabScore: StrategyScore;
+  scores: {
+    ascensionConsistency: StrategyScore;
+    disruptionControl: StrategyScore;
+    resilienceRecovery: StrategyScore;
+    formatFit: StrategyScore;
+    deadCardRisk: StrategyScore;
+  };
+  factualInputs: {
+    creatureCount: number;
+    tarotCount: number;
+    worshipCount: number;
+    imposterCount: number;
+    majorArcanaCount: number;
+    uniqueClanCount: number;
+    totalCreatureWorshipRequired: number;
+    formatWarningCount: number;
+    tarotTagCounts: { tag: string; count: number }[];
+  };
+  globalNotes: string[];
+  disclaimer: string;
+}
+
+export interface StrategyScoringWeights {
+  ascensionConsistency: Record<string, number>;
+  disruptionControl: Record<string, number>;
+  resilienceRecovery: Record<string, number>;
+  formatFit: Record<string, number>;
+  deadCardRisk: Record<string, number>;
+  overall: {
+    ascensionConsistency: number;
+    disruptionControl: number;
+    resilienceRecovery: number;
+    formatFit: number;
+    deadCardRiskPenalty: number;
+  };
+}

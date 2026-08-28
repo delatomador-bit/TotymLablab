@@ -885,6 +885,113 @@ button {
 
 /* ---------- Coming soon ---------- */
 
+/* ---------- Strategy Score Panel ---------- */
+
+.strategy-overall-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.strategy-overall-score {
+  font-size: 42px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.strategy-overall-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.strategy-overall-band {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.strategy-score-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.strategy-score-row {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.strategy-score-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.strategy-score-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.strategy-score-value {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.strategy-score-detail {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.strategy-factor {
+  display: flex;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 11px;
+  line-height: 150%;
+  color: var(--text);
+}
+
+.strategy-factor-icon {
+  flex-shrink: 0;
+  font-weight: 700;
+  width: 12px;
+}
+
+.strategy-factor-contrib .strategy-factor-icon {
+  color: var(--green);
+}
+
+.strategy-factor-caution .strategy-factor-icon {
+  color: var(--warning);
+}
+
+.strategy-factual-inputs {
+  margin-top: 6px;
+}
+
+.strategy-notes {
+  margin-top: 6px;
+}
+
+/* ---------- Coming soon ---------- */
+
 .coming-soon {
   border: 1px dashed var(--border);
   border-radius: 8px;
