@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { DeckCard, PlayerMode, TotymCard } from './types/totym';
+import type { DeckCard, PlayerMode, TotymCard, TotymDeck } from './types/totym';
 import { TOTYM_RULESET_V2, CATALOG_DATA_STATUS } from './data/totymRuleset';
 import {
   SEED_CARDS,
@@ -114,6 +114,11 @@ export default function App() {
     [cards, cardLookup],
   );
 
+  const deck: TotymDeck = useMemo(
+    () => ({ name: deckName, format: 'traditional', cards }),
+    [deckName, cards],
+  );
+
   const orphanedCardIds = useMemo(
     () => cards.filter((dc) => !cardLookup[dc.cardId]).map((dc) => dc.cardId),
     [cards, cardLookup],
@@ -181,11 +186,12 @@ export default function App() {
             <h2>Legality &amp; Analysis</h2>
           </div>
           <AnalysisPanel
-            cards={cards}
+            deck={deck}
             mode={mode}
             onModeChange={setMode}
             validationResult={validationResult}
             cardLookup={cardLookup}
+            activeCards={catalogCards}
           />
         </section>
       </main>

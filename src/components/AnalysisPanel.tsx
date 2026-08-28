@@ -1,58 +1,42 @@
 import { useMemo } from 'react';
-import type { Clan, DeckCard, PlayerMode, TotymCard, ValidationResult } from '../types/totym';
+import type { PlayerMode, TotymCard, TotymDeck, ValidationResult } from '../types/totym';
 import { TOTYM_RULESET_V2 } from '../data/totymRuleset';
 import { formatWarningsFor } from '../lib/formatRules';
+import { analyzeCreatureCore } from '../lib/creatureCoreAnalyzer';
 import type { CardLookup } from '../lib/deckValidator';
 import {
-  CLAN_COLORS,
-  CLAN_LABELS,
   PLAYER_MODES,
   PLAYER_MODE_LABELS,
 } from '../lib/labels';
 import LegalityPanel from './LegalityPanel';
+import CreatureCorePanel from './CreatureCorePanel';
 
 interface Props {
-  cards: DeckCard[];
+  deck: TotymDeck;
   mode: PlayerMode;
   onModeChange: (mode: PlayerMode) => void;
   validationResult: ValidationResult;
   cardLookup: CardLookup;
+  activeCards: TotymCard[];
 }
 
-const CLAN_ORDER: Clan[] = ['berserkers', 'druids', 'bards', 'zealots', 'mystics'];
-
-export default function AnalysisPanel({ cards, mode, onModeChange, validationResult, cardLookup }: Props) {
-  const fmtWarnings = useMemo(() => formatWarningsFor(cards, mode, cardLookup), [cards, mode, cardLookup]);
-
-  const creatures = useMemo(
-    () => cards
-      .map((dc) => ({ dc, card: cardLookup[dc.cardId] }))
-      .filter((r): r is { dc: DeckCard; card: TotymCard } => !!r.card && r.card.cardType === 'creature'),
-    [cards, cardLookup],
+export default function AnalysisPanel({
+  deck,
+  mode,
+  onModeChange,
+  validationResult,
+  cardLookup,
+  activeCards,
+}: Props) {
+  const fmtWarnings = useMemo(
+    () => formatWarningsFor(deck.cards, mode, cardLookup),
+    [deck.cards, mode, cardLookup],
   );
 
-  const demand = useMemo(() => {
-    const totals: Record<Clan, number> = {
-      berserkers: 0, druids: 0, bards: 0, zealots: 0, mystics: 0,
-    };
-    for (const { card } of creatures) {
-      if (card.creatureRequirements) {
-        totals[card.creatureRequirements.left.clan] += card.creatureRequirements.left.required;
-        totals[card.creatureRequirements.right.clan] += card.creatureRequirements.right.required;
-      }
-    }
-    return totals;
-  }, [creatures]);
-
-  const maxDemand = Math.max(1, ...CLAN_ORDER.map((c) => demand[c]));
-  const representedClans = CLAN_ORDER.filter((c) => demand[c] > 0);
-  const mostDemanded = CLAN_ORDER.reduce<Clan | null>((top, c) => {
-    if (demand[c] === 0) return top;
-    if (!top || demand[c] > demand[top]) return c;
-    return top;
-  }, null);
-
-  const creatureIncomplete = creatures.length < 5;
+  const creatureProfile = useMemo(
+    () => analyzeCreatureCore(deck, activeCards),
+    [deck, activeCards],
+  );
 
   return (
     <div className="col-body">
@@ -84,7 +68,7 @@ export default function AnalysisPanel({ cards, mode, onModeChange, validationRes
         </div>
       </div>
 
-      <LegalityPanel result={validationResult} cards={cards} />
+      <LegalityPanel result={validationResult} cards={deck.cards} />
 
       {fmtWarnings.length > 0 && (
         <div className="subsection">
@@ -104,77 +88,14 @@ export default function AnalysisPanel({ cards, mode, onModeChange, validationRes
         </div>
       )}
 
-      <div className="subsection">
-        <div className="subsection-head">
-          Creature core {creatureIncomplete && '· Incomplete'}
-        </div>
-        {creatures.length === 0 ? (
-          <p style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>
-            No creatures selected.
-          </p>
-        ) : (
-          <>
-            {creatures.map(({ card }) => (
-              <div key={card.id} className="creature-req-row">
-                <span className="creature-req-name">{card.name}</span>
-                <span style={{ flex: 1, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  {card.creatureRequirements && (
-                    <>
-                      <span className="req-side">
-                        <span className="clan-dot" style={{ background: CLAN_COLORS[card.creatureRequirements.left.clan] }} />
-                        {CLAN_LABELS[card.creatureRequirements.left.clan]} {card.creatureRequirements.left.required}
-                      </span>
-                      <span className="req-side">
-                        <span className="clan-dot" style={{ background: CLAN_COLORS[card.creatureRequirements.right.clan] }} />
-                        {CLAN_LABELS[card.creatureRequirements.right.clan]} {card.creatureRequirements.right.required}
-                      </span>
-                    </>
-                  )}
-                </span>
-              </div>
-            ))}
-
-            <div style={{ marginTop: 12 }}>
-              <div className="section-label">Aggregate clan demand</div>
-              {CLAN_ORDER.map((clan) => (
-                <div key={clan} className="demand-bar-wrap">
-                  <span className="demand-clan">
-                    <span className="clan-dot" style={{ background: CLAN_COLORS[clan] }} />
-                    {CLAN_LABELS[clan]}
-                  </span>
-                  <span className="demand-bar-track">
-                    <span
-                      className="demand-bar-fill"
-                      style={{
-                        width: `${(demand[clan] / maxDemand) * 100}%`,
-                        background: CLAN_COLORS[clan],
-                      }}
-                    />
-                  </span>
-                  <span className="demand-val">{demand[clan]}</span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-dim)' }}>
-              {creatureIncomplete ? (
-                <span style={{ color: 'var(--warning)' }}>Incomplete creature core — {creatures.length} of 5 creatures selected.</span>
-              ) : (
-                <span>
-                  Most demanded: <strong style={{ color: mostDemanded ? CLAN_COLORS[mostDemanded] : 'var(--text-h)' }}>
-                    {mostDemanded ? CLAN_LABELS[mostDemanded] : '—'}
-                  </strong> · {representedClans.length} clan{representedClans.length === 1 ? '' : 's'} represented.
-                </span>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+      <CreatureCorePanel profile={creatureProfile} />
 
       <div className="subsection">
         <div className="subsection-head">Strategy scoring</div>
         <p style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8 }}>
-          Strategy scoring is planned after the full card catalog and initial rules tests are loaded.
+          Next: Strategy scoring will use this Creature Core requirement profile
+          alongside the Tarot package, player-count format rules, and future
+          rules tests.
         </p>
         <div className="coming-soon">
           <div className="coming-soon-list">

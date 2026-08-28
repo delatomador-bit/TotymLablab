@@ -89,3 +89,43 @@ export interface FormatWarning {
   severity: 'warning' | 'info';
   message: string;
 }
+
+export interface ClanDemand {
+  clan: Clan;
+  required: number;
+  creatureCount: number;
+}
+
+export interface CreatureCoreEntry {
+  cardId: string;
+  cardNumber: string;
+  name: string;
+  immunity: string;
+  blessing: string;
+  left: {
+    clan: Clan;
+    required: number;
+  };
+  right: {
+    clan: Clan;
+    required: number;
+  };
+  totalRequired: number;
+}
+
+export type RequirementProfile = 'incomplete' | 'concentrated' | 'mixed' | 'broad';
+
+export interface CreatureCoreProfile {
+  selectedCreatureCount: number;
+  isComplete: boolean;
+  hasDuplicateCreatures: boolean;
+  entries: CreatureCoreEntry[];
+  clanDemand: ClanDemand[];
+  totalWorshipRequired: number;
+  uniqueClanCount: number;
+  mostDemandedClans: ClanDemand[];
+  leastDemandedClans: ClanDemand[];
+  requirementProfile: RequirementProfile;
+  summary: string[];
+  warnings: string[];
+}

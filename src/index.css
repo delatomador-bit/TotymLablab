@@ -669,7 +669,7 @@ button {
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: var(--text-dim);
+  color: 'var(--text-dim)';
 }
 
 .demand-bar-wrap {
@@ -709,6 +709,149 @@ button {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--text-h);
+}
+
+/* ---------- Creature Core Panel ---------- */
+
+.creature-core-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.creature-core-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.creature-entry-card {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  padding: 8px 10px;
+}
+
+.creature-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.creature-entry-id {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+.creature-entry-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+  flex: 1;
+}
+
+.creature-entry-total {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.creature-entry-reqs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.creature-entry-toggle {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 0 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.creature-entry-toggle:hover {
+  color: var(--text-h);
+}
+
+.creature-entry-detail {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.creature-detail-row {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+  line-height: 150%;
+}
+
+.creature-detail-label {
+  width: 70px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.creature-detail-val {
+  color: var(--text);
+  flex: 1;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.core-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.core-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  min-width: 80px;
+}
+
+.core-chip-wide {
+  flex: 1;
+  min-width: 140px;
+}
+
+.core-chip-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.core-chip-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.core-summary-lines {
+  display: flex;
+  flex-direction: column;
 }
 
 /* ---------- Coming soon ---------- */
