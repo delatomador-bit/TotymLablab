@@ -3,6 +3,7 @@ import type { PlayerMode, TotymCard, TotymDeck, ValidationResult } from '../type
 import { TOTYM_RULESET_V2 } from '../data/totymRuleset';
 import { formatWarningsFor } from '../lib/formatRules';
 import { analyzeCreatureCore } from '../lib/creatureCoreAnalyzer';
+import { analyzeTarotPackage } from '../lib/tarotPackageAnalyzer';
 import type { CardLookup } from '../lib/deckValidator';
 import {
   PLAYER_MODES,
@@ -10,6 +11,7 @@ import {
 } from '../lib/labels';
 import LegalityPanel from './LegalityPanel';
 import CreatureCorePanel from './CreatureCorePanel';
+import TarotPackagePanel from './TarotPackagePanel';
 
 interface Props {
   deck: TotymDeck;
@@ -36,6 +38,11 @@ export default function AnalysisPanel({
   const creatureProfile = useMemo(
     () => analyzeCreatureCore(deck, activeCards),
     [deck, activeCards],
+  );
+
+  const tarotProfile = useMemo(
+    () => analyzeTarotPackage(deck, activeCards, mode),
+    [deck, activeCards, mode],
   );
 
   return (
@@ -90,12 +97,14 @@ export default function AnalysisPanel({
 
       <CreatureCorePanel profile={creatureProfile} />
 
+      <TarotPackagePanel profile={tarotProfile} />
+
       <div className="subsection">
         <div className="subsection-head">Strategy scoring</div>
         <p style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8 }}>
-          Next: Strategy scoring will use this Creature Core requirement profile
-          alongside the Tarot package, player-count format rules, and future
-          rules tests.
+          Next: Strategy scoring will combine the factual Creature Core and
+          text-derived Tarot Package profiles with player-count rules and
+          confirmed scenario tests.
         </p>
         <div className="coming-soon">
           <div className="coming-soon-list">

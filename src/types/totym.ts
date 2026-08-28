@@ -129,3 +129,77 @@ export interface CreatureCoreProfile {
   summary: string[];
   warnings: string[];
 }
+
+export type TarotEffectTag =
+  | 'draw'
+  | 'redraw'
+  | 'shuffle'
+  | 'discard'
+  | 'reveal'
+  | 'block_draw'
+  | 'block_tarot'
+  | 'block_worship'
+  | 'block_totem_lock'
+  | 'block_imposter'
+  | 'switch_creature'
+  | 'curse'
+  | 'convert_worship'
+  | 'collapse_totem'
+  | 'extra_tarot_action'
+  | 'extra_worship_action'
+  | 'extra_totem_lock_action'
+  | 'skip_turn'
+  | 'skip_turn_draw'
+  | 'look_arrange'
+  | 'coin_flip'
+  | 'gamble'
+  | 'reverse_turn_order'
+  | 'other';
+
+export type TarotTargetCategory = 'self' | 'opponent' | 'two_opponents' | 'any' | 'all';
+
+export interface TarotTargetCount {
+  target: TarotTargetCategory;
+  count: number;
+}
+
+export type TarotSuitCategory = 'major' | 'wands' | 'cups' | 'swords' | 'pentacles';
+
+export interface TarotSuitCount {
+  suit: TarotSuitCategory;
+  count: number;
+}
+
+export interface TarotCardAnalysis {
+  cardId: string;
+  cardNumber: string;
+  name: string;
+  quantity: number;
+  arcanaType: 'major' | 'minor';
+  suit: 'wands' | 'cups' | 'swords' | 'pentacles' | null;
+  targetType: TarotTargetCategory;
+  effectText: string;
+  derivedTags: TarotEffectTag[];
+  formatNotes: string[];
+}
+
+export interface TarotEffectTagCount {
+  tag: TarotEffectTag;
+  count: number;
+}
+
+export interface TarotPackageProfile {
+  tarotCardCount: number;
+  distinctTarotCount: number;
+  majorArcanaCount: number;
+  minorArcanaCount: number;
+  suitCounts: TarotSuitCount[];
+  targetCounts: TarotTargetCount[];
+  effectTagCounts: TarotEffectTagCount[];
+  entries: TarotCardAnalysis[];
+  selectedMode: PlayerMode;
+  formatWarnings: string[];
+  formatNotes: string[];
+  factualSummary: string[];
+  analysisNotes: string[];
+}

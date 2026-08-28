@@ -854,6 +854,35 @@ button {
   flex-direction: column;
 }
 
+/* ---------- Tarot Package Panel ---------- */
+
+.tarot-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tarot-tag-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 11px;
+}
+
+.tarot-tag-name {
+  color: var(--text-dim);
+}
+
+.tarot-tag-count {
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- Coming soon ---------- */
 
 .coming-soon {
