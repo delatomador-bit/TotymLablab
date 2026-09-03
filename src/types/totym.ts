@@ -101,3 +101,21 @@ export interface GeneratedWorshipPackage {
   explanation: string[];
   warnings: string[];
 }
+export interface TraditionalDeckCounts {
+  manualCreatures: number;
+  distinctCreatures: number;
+  manualTarot: number;
+  generatedWorship: number;
+  reservedImposters: number;
+  computedTotal: number;
+}
+
+export interface TraditionalDeckValidation {
+  isValid: boolean;
+  creatureCore: CreatureCoreProfile;
+  worshipPackage: GeneratedWorshipPackage;
+  counts: TraditionalDeckCounts;
+  errors: string[];
+  warnings: string[];
+  summary: string[];
+}
