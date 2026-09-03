@@ -26,7 +26,7 @@ export interface TotymCard {
   cardNumber: string;
   name: string;
   cardType: CardType;
-  arcanaType: string | null;
+arcanaType: ArcanaType;
   suit: string | null;
   targetType: string | null;
   effectText: string | null;
@@ -118,4 +118,46 @@ export interface TraditionalDeckValidation {
   errors: string[];
   warnings: string[];
   summary: string[];
+}
+
+export interface PerfectTotemRequirement {
+  clan: Clan;
+  required: number;
+  creatureName: string;
+  side: 'left' | 'right';
+}
+
+export interface WorshipSufficiencyGap {
+  clan: Clan;
+  available: number;
+  required: number;
+  shortfall: number;
+  affectedRequirements: PerfectTotemRequirement[];
+}
+
+export interface WorshipSufficiencyProfile {
+  canPerfectlySupportEveryCreature: boolean;
+  maximumRequirementByClan: Array<{
+    clan: Clan;
+    required: number;
+  }>;
+  gaps: WorshipSufficiencyGap[];
+  warnings: string[];
+}
+
+export type ArcanaType = 'major' | 'minor' | 'placeholder' | null;
+
+export interface TarotValidationProfile {
+  totalTarot: number;
+  majorArcanaCount: number;
+  minorArcanaCount: number;
+  copyLimitViolations: Array<{
+    cardId: string;
+    cardName: string;
+    arcanaType: 'major' | 'minor';
+    quantity: number;
+    allowedQuantity: number;
+  }>;
+  hasTooManyMajorArcana: boolean;
+  isValid: boolean;
 }
