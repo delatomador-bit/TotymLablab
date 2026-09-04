@@ -1,35 +1,15 @@
-export type Clan =
+﻿export type Clan =
   | 'berserkers'
   | 'druids'
   | 'bards'
   | 'zealots'
   | 'mystics';
 
-export type CardType =
-  | 'creature'
-  | 'worship'
-  | 'tarot'
-  | 'imposter'
-  | 'relic';
+export type CardType = 'creature' | 'tarot' | 'worship' | 'imposter';
 
-export type ArcanaType = 'major' | 'minor' | null;
+export type DeckFormat = 'traditional';
 
-export type TarotSuit =
-  | 'wands'
-  | 'cups'
-  | 'swords'
-  | 'pentacles'
-  | null;
-
-export type TargetType =
-  | 'self'
-  | 'opponent'
-  | 'two_opponents'
-  | 'any'
-  | 'all'
-  | null;
-
-export type PlayerMode = '1v1' | '3-player' | '4-player';
+export type PlayerMode = '1v1';
 
 export interface WorshipRequirement {
   clan: Clan;
@@ -46,14 +26,13 @@ export interface TotymCard {
   cardNumber: string;
   name: string;
   cardType: CardType;
-  arcanaType: ArcanaType;
-  suit: TarotSuit;
-  targetType: TargetType;
+arcanaType: ArcanaType;
+  suit: string | null;
+  targetType: string | null;
   effectText: string | null;
-  immunity: string | null;
-  blessing: string | null;
-  creatureRequirements: CreatureRequirements | null;
-  effectTags: string[];
+  immunity?: string;
+  blessing?: string;
+  creatureRequirements?: CreatureRequirements;
 }
 
 export interface DeckCard {
@@ -62,38 +41,11 @@ export interface DeckCard {
 }
 
 export interface TotymDeck {
+  id: string;
   name: string;
-  format: 'traditional';
+  format: DeckFormat;
+  playerMode: PlayerMode;
   cards: DeckCard[];
-}
-
-export interface CountSummary {
-  total: number;
-  creatures: number;
-  worship: number;
-  tarot: number;
-  imposters: number;
-  majorArcana: number;
-}
-
-export interface ValidationResult {
-  valid: boolean;
-  errors: string[];
-  warnings: string[];
-  counts: CountSummary;
-}
-
-export interface FormatWarning {
-  cardId: string;
-  cardName: string;
-  severity: 'warning' | 'info';
-  message: string;
-}
-
-export interface ClanDemand {
-  clan: Clan;
-  required: number;
-  creatureCount: number;
 }
 
 export interface CreatureCoreEntry {
@@ -102,167 +54,110 @@ export interface CreatureCoreEntry {
   name: string;
   immunity: string;
   blessing: string;
-  left: {
-    clan: Clan;
-    required: number;
-  };
-  right: {
-    clan: Clan;
-    required: number;
-  };
+  left: WorshipRequirement;
+  right: WorshipRequirement;
   totalRequired: number;
 }
 
-export type RequirementProfile = 'incomplete' | 'concentrated' | 'mixed' | 'broad';
+export interface ClanDemand {
+  clan: Clan;
+  required: number;
+  creatureCount: number;
+}
+
+export type RequirementProfile =
+  | 'incomplete'
+  | 'concentrated'
+  | 'mixed'
+  | 'broad';
 
 export interface CreatureCoreProfile {
   selectedCreatureCount: number;
+  distinctCreatureCount: number;
   isComplete: boolean;
   hasDuplicateCreatures: boolean;
+  duplicateCreatureIds?: string[];
   entries: CreatureCoreEntry[];
   clanDemand: ClanDemand[];
   totalWorshipRequired: number;
   uniqueClanCount: number;
-  mostDemandedClans: ClanDemand[];
-  leastDemandedClans: ClanDemand[];
   requirementProfile: RequirementProfile;
   summary: string[];
   warnings: string[];
 }
 
-export type TarotEffectTag =
-  | 'draw'
-  | 'redraw'
-  | 'shuffle'
-  | 'discard'
-  | 'reveal'
-  | 'block_draw'
-  | 'block_tarot'
-  | 'block_worship'
-  | 'block_totem_lock'
-  | 'block_imposter'
-  | 'switch_creature'
-  | 'curse'
-  | 'convert_worship'
-  | 'collapse_totem'
-  | 'extra_tarot_action'
-  | 'extra_worship_action'
-  | 'extra_totem_lock_action'
-  | 'skip_turn'
-  | 'skip_turn_draw'
-  | 'look_arrange'
-  | 'coin_flip'
-  | 'gamble'
-  | 'reverse_turn_order'
-  | 'other';
-
-export type TarotTargetCategory = 'self' | 'opponent' | 'two_opponents' | 'any' | 'all';
-
-export interface TarotTargetCount {
-  target: TarotTargetCategory;
-  count: number;
-}
-
-export type TarotSuitCategory = 'major' | 'wands' | 'cups' | 'swords' | 'pentacles';
-
-export interface TarotSuitCount {
-  suit: TarotSuitCategory;
-  count: number;
-}
-
-export interface TarotCardAnalysis {
-  cardId: string;
-  cardNumber: string;
-  name: string;
+export interface GeneratedWorshipAllocation {
+  clan: Clan;
   quantity: number;
-  arcanaType: 'major' | 'minor';
-  suit: 'wands' | 'cups' | 'swords' | 'pentacles' | null;
-  targetType: TarotTargetCategory;
-  effectText: string;
-  derivedTags: TarotEffectTag[];
-  formatNotes: string[];
+  demand: number;
 }
 
-export interface TarotEffectTagCount {
-  tag: TarotEffectTag;
-  count: number;
+export interface GeneratedWorshipPackage {
+  total: number;
+  allocations: GeneratedWorshipAllocation[];
+  usedClans: Clan[];
+  algorithmVersion: 'v1-proportional-demand';
+  isCompleteCreatureCore: boolean;
+  explanation: string[];
+  warnings: string[];
+}
+export interface TraditionalDeckCounts {
+  manualCreatures: number;
+  distinctCreatures: number;
+  manualTarot: number;
+  generatedWorship: number;
+  reservedImposters: number;
+  computedTotal: number;
 }
 
-export interface TarotPackageProfile {
-  tarotCardCount: number;
-  distinctTarotCount: number;
+export interface TraditionalDeckValidation {
+  isValid: boolean;
+  creatureCore: CreatureCoreProfile;
+  worshipPackage: GeneratedWorshipPackage;
+  counts: TraditionalDeckCounts;
+  errors: string[];
+  warnings: string[];
+  summary: string[];
+}
+
+export interface PerfectTotemRequirement {
+  clan: Clan;
+  required: number;
+  creatureName: string;
+  side: 'left' | 'right';
+}
+
+export interface WorshipSufficiencyGap {
+  clan: Clan;
+  available: number;
+  required: number;
+  shortfall: number;
+  affectedRequirements: PerfectTotemRequirement[];
+}
+
+export interface WorshipSufficiencyProfile {
+  canPerfectlySupportEveryCreature: boolean;
+  maximumRequirementByClan: Array<{
+    clan: Clan;
+    required: number;
+  }>;
+  gaps: WorshipSufficiencyGap[];
+  warnings: string[];
+}
+
+export type ArcanaType = 'major' | 'minor' | 'placeholder' | null;
+
+export interface TarotValidationProfile {
+  totalTarot: number;
   majorArcanaCount: number;
   minorArcanaCount: number;
-  suitCounts: TarotSuitCount[];
-  targetCounts: TarotTargetCount[];
-  effectTagCounts: TarotEffectTagCount[];
-  entries: TarotCardAnalysis[];
-  selectedMode: PlayerMode;
-  formatWarnings: string[];
-  formatNotes: string[];
-  factualSummary: string[];
-  analysisNotes: string[];
-}
-
-export type StrategyScoreKey =
-  | 'ascensionConsistency'
-  | 'disruptionControl'
-  | 'resilienceRecovery'
-  | 'formatFit'
-  | 'deadCardRisk'
-  | 'overallLabScore';
-
-export type ScoreBand = 'early' | 'developing' | 'solid' | 'strong';
-
-export interface StrategyScore {
-  key: StrategyScoreKey;
-  label: string;
-  score: number;
-  band: ScoreBand;
-  explanation: string;
-  contributingFactors: string[];
-  cautionFactors: string[];
-}
-
-export interface HeuristicAnalysis {
-  rulesetId: string;
-  selectedMode: PlayerMode;
-  isLegal: boolean;
-  isProvisional: boolean;
-  overallLabScore: StrategyScore;
-  scores: {
-    ascensionConsistency: StrategyScore;
-    disruptionControl: StrategyScore;
-    resilienceRecovery: StrategyScore;
-    formatFit: StrategyScore;
-    deadCardRisk: StrategyScore;
-  };
-  factualInputs: {
-    creatureCount: number;
-    tarotCount: number;
-    worshipCount: number;
-    imposterCount: number;
-    majorArcanaCount: number;
-    uniqueClanCount: number;
-    totalCreatureWorshipRequired: number;
-    formatWarningCount: number;
-    tarotTagCounts: { tag: string; count: number }[];
-  };
-  globalNotes: string[];
-  disclaimer: string;
-}
-
-export interface StrategyScoringWeights {
-  ascensionConsistency: Record<string, number>;
-  disruptionControl: Record<string, number>;
-  resilienceRecovery: Record<string, number>;
-  formatFit: Record<string, number>;
-  deadCardRisk: Record<string, number>;
-  overall: {
-    ascensionConsistency: number;
-    disruptionControl: number;
-    resilienceRecovery: number;
-    formatFit: number;
-    deadCardRiskPenalty: number;
-  };
+  copyLimitViolations: Array<{
+    cardId: string;
+    cardName: string;
+    arcanaType: 'major' | 'minor';
+    quantity: number;
+    allowedQuantity: number;
+  }>;
+  hasTooManyMajorArcana: boolean;
+  isValid: boolean;
 }

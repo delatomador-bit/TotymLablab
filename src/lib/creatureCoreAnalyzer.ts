@@ -3,12 +3,11 @@ import type {
   ClanDemand,
   CreatureCoreEntry,
   CreatureCoreProfile,
-  RequirementProfile,
   TotymCard,
   TotymDeck,
 } from '../types/totym';
 
-const CLAN_ORDER: Clan[] = [
+const CLANS: Clan[] = [
   'berserkers',
   'druids',
   'bards',
@@ -16,231 +15,215 @@ const CLAN_ORDER: Clan[] = [
   'mystics',
 ];
 
-const CLAN_LABELS: Record<Clan, string> = {
-  berserkers: 'Berserkers',
-  druids: 'Druids',
-  bards: 'Bards',
-  zealots: 'Zealots',
-  mystics: 'Mystics',
-};
-
-function profileLabel(profile: RequirementProfile): string {
-  switch (profile) {
-    case 'incomplete':
-      return 'Incomplete';
-    case 'concentrated':
-      return 'Concentrated';
-    case 'mixed':
-      return 'Mixed';
-    case 'broad':
-      return 'Broad';
-  }
-}
-
-export function analyzeCreatureCore(
-  deck: TotymDeck,
-  activeCards: TotymCard[],
-): CreatureCoreProfile {
-  const cardById: Record<string, TotymCard> = Object.fromEntries(
-    activeCards.map((c) => [c.id, c]),
-  );
-
-  const creatureEntries: CreatureCoreEntry[] = [];
-  const duplicateIds: string[] = [];
-  const missingIds: string[] = [];
-
-  for (const dc of deck.cards) {
-    const card = cardById[dc.cardId];
-    if (!card) {
-      missingIds.push(dc.cardId);
-      continue;
-    }
-    if (card.cardType !== 'creature') continue;
-    if (!card.creatureRequirements) continue;
-
-    if (dc.quantity > 1) {
-      duplicateIds.push(card.id);
-    }
-
-    const left = card.creatureRequirements.left;
-    const right = card.creatureRequirements.right;
-
-    creatureEntries.push({
-      cardId: card.id,
-      cardNumber: card.cardNumber,
-      name: card.name,
-      immunity: card.immunity ?? '',
-      blessing: card.blessing ?? '',
-      left: { clan: left.clan, required: left.required },
-      right: { clan: right.clan, required: right.required },
-      totalRequired: left.required + right.required,
-    });
-  }
-
-  const distinctIds = new Set(creatureEntries.map((e) => e.cardId));
-  const selectedCreatureCount = distinctIds.size;
-  const hasDuplicateCreatures = duplicateIds.length > 0;
-
-  const clanDemand: ClanDemand[] = CLAN_ORDER.map((clan) => ({
+function createEmptyDemand(): ClanDemand[] {
+  return CLANS.map((clan) => ({
     clan,
     required: 0,
     creatureCount: 0,
   }));
+}
 
-  const clanIndex: Record<Clan, number> = {
-    berserkers: 0,
-    druids: 1,
-    bards: 2,
-    zealots: 3,
-    mystics: 4,
-  };
+function getRequirementProfile(
+  isComplete: boolean,
+  hasDuplicateCreatures: boolean,
+  uniqueClanCount: number,
+): CreatureCoreProfile['requirementProfile'] {
+  if (!isComplete || hasDuplicateCreatures) {
+    return 'incomplete';
+  }
 
-  for (const entry of creatureEntries) {
-    clanDemand[clanIndex[entry.left.clan]].required += entry.left.required;
-    clanDemand[clanIndex[entry.right.clan]].required += entry.right.required;
+  if (uniqueClanCount <= 2) {
+    return 'concentrated';
+  }
 
-    const clansForThisCreature = new Set<Clan>([
+  if (uniqueClanCount === 3) {
+    return 'mixed';
+  }
+
+  return 'broad';
+}
+
+/**
+ * Analyzes only factual Creature data from the selected deck.
+ *
+ * It does not evaluate strength, card effects, Tarot, player mode,
+ * hidden information, or probability. It only calculates the worship
+ * demand implied by selected Creature requirements.
+ */
+export function analyzeCreatureCore(
+  deck: TotymDeck,
+  activeCards: TotymCard[],
+): CreatureCoreProfile {
+  const cardById = new Map(activeCards.map((card) => [card.id, card]));
+
+  const selectedCreatureRows = deck.cards
+    .map((deckCard) => ({
+      deckCard,
+      card: cardById.get(deckCard.cardId),
+    }))
+    .filter(
+      (
+        entry,
+      ): entry is {
+        deckCard: TotymDeck['cards'][number];
+        card: TotymCard;
+      } => entry.card?.cardType === 'creature',
+    );
+
+  const duplicateCreatureIds = selectedCreatureRows
+    .filter((entry) => entry.deckCard.quantity > 1)
+    .map((entry) => entry.card.id);
+
+  const entries: CreatureCoreEntry[] = selectedCreatureRows
+    .filter((entry) => entry.deckCard.quantity > 0)
+    .map(({ card }) => {
+      const requirements = card.creatureRequirements;
+
+      if (!requirements || !card.immunity || !card.blessing) {
+        throw new Error(
+          `Creature ${card.id} is missing required factual Creature data.`,
+        );
+      }
+
+      return {
+        cardId: card.id,
+        cardNumber: card.cardNumber,
+        name: card.name,
+        immunity: card.immunity,
+        blessing: card.blessing,
+        left: requirements.left,
+        right: requirements.right,
+        totalRequired: requirements.left.required + requirements.right.required,
+      };
+    });
+
+  const selectedCreatureCount = selectedCreatureRows.reduce(
+    (total, entry) => total + entry.deckCard.quantity,
+    0,
+  );
+
+  const distinctCreatureCount = entries.length;
+  const hasDuplicateCreatures = duplicateCreatureIds.length > 0;
+
+  const clanDemand = createEmptyDemand();
+
+  entries.forEach((entry) => {
+    const creatureClans = new Set<Clan>([
       entry.left.clan,
       entry.right.clan,
     ]);
-    for (const clan of clansForThisCreature) {
-      clanDemand[clanIndex[clan]].creatureCount += 1;
-    }
-  }
+
+    clanDemand.forEach((demand) => {
+      if (creatureClans.has(demand.clan)) {
+        demand.creatureCount += 1;
+      }
+    });
+
+    clanDemand.find((demand) => demand.clan === entry.left.clan)!.required +=
+      entry.left.required;
+
+    clanDemand.find((demand) => demand.clan === entry.right.clan)!.required +=
+      entry.right.required;
+  });
 
   const totalWorshipRequired = clanDemand.reduce(
-    (sum, cd) => sum + cd.required,
+    (total, demand) => total + demand.required,
     0,
   );
 
-  const positiveDemandClans = clanDemand.filter((cd) => cd.required > 0);
-  const uniqueClanCount = positiveDemandClans.length;
+  const uniqueClanCount = clanDemand.filter(
+    (demand) => demand.required > 0,
+  ).length;
 
   const isComplete =
-    selectedCreatureCount === 5 && !hasDuplicateCreatures;
+    distinctCreatureCount === 5 &&
+    selectedCreatureCount === 5 &&
+    !hasDuplicateCreatures;
 
-  let requirementProfile: RequirementProfile;
-  if (selectedCreatureCount < 5 || hasDuplicateCreatures) {
-    requirementProfile = 'incomplete';
-  } else if (uniqueClanCount <= 2) {
-    requirementProfile = 'concentrated';
-  } else if (uniqueClanCount === 3) {
-    requirementProfile = 'mixed';
-  } else {
-    requirementProfile = 'broad';
-  }
-
-  const maxRequired = clanDemand.reduce(
-    (max, cd) => Math.max(max, cd.required),
-    0,
+  const requirementProfile = getRequirementProfile(
+    isComplete,
+    hasDuplicateCreatures,
+    uniqueClanCount,
   );
-
-  const mostDemandedClans: ClanDemand[] =
-    maxRequired > 0
-      ? clanDemand.filter((cd) => cd.required === maxRequired)
-      : [];
-
-  const minAmongPositive = positiveDemandClans.reduce(
-    (min, cd) => Math.min(min, cd.required),
-    Infinity,
-  );
-
-  let leastDemandedClans: ClanDemand[];
-  if (!isComplete && positiveDemandClans.length === 0) {
-    leastDemandedClans = clanDemand.filter((cd) => cd.required === 0);
-  } else if (isComplete) {
-    leastDemandedClans = positiveDemandClans.filter(
-      (cd) => cd.required === minAmongPositive,
-    );
-  } else {
-    leastDemandedClans = positiveDemandClans.filter(
-      (cd) => cd.required === minAmongPositive,
-    );
-  }
-
-  const zeroDemandClans = clanDemand.filter((cd) => cd.required === 0);
 
   const summary: string[] = [];
   const warnings: string[] = [];
 
-  if (creatureEntries.length === 0) {
+  if (distinctCreatureCount === 0) {
     summary.push(
       'No Creature cards selected. Add up to five unique Creatures to inspect Worship requirements.',
     );
-  } else if (selectedCreatureCount < 5) {
+  } else if (!isComplete) {
     summary.push(
-      `Incomplete Creature Core: ${selectedCreatureCount} of 5 unique Creatures selected.`,
+      `Incomplete Creature Core: ${distinctCreatureCount} of 5 unique Creatures selected.`,
     );
-  }
-
-  if (hasDuplicateCreatures) {
-    summary.push(
-      'Traditional Mode requires five unique Creatures; duplicate Creature quantities are not allowed.',
-    );
-    warnings.push(
-      `Duplicate Creature quantity detected for: ${duplicateIds.join(', ')}.`,
-    );
-  }
-
-  if (isComplete) {
+  } else {
     summary.push('Complete Creature Core: 5 unique Creatures selected.');
   }
 
-  if (creatureEntries.length > 0) {
+  if (hasDuplicateCreatures) {
+    warnings.push(
+      'Traditional Mode requires five unique Creatures; duplicate Creature quantities are not allowed.',
+    );
+  }
+
+  if (distinctCreatureCount > 5) {
+    warnings.push(
+      'Traditional Mode requires exactly 5 Creature cards; more than 5 distinct Creatures are selected.',
+    );
+  }
+
+  if (distinctCreatureCount > 0) {
     summary.push(
-      `Aggregate Worship requirement: ${totalWorshipRequired} total cards across ${uniqueClanCount} clan${uniqueClanCount === 1 ? '' : 's'}.`,
+      `Aggregate Worship requirement: ${totalWorshipRequired} total cards across ${uniqueClanCount} clan(s).`,
+    );
+  }
+
+  if (uniqueClanCount > 0) {
+    const positiveDemand = clanDemand.filter((demand) => demand.required > 0);
+    const maxDemand = Math.max(...positiveDemand.map((demand) => demand.required));
+    const minDemand = Math.min(...positiveDemand.map((demand) => demand.required));
+
+    const highest = positiveDemand
+      .filter((demand) => demand.required === maxDemand)
+      .map((demand) => demand.clan)
+      .join(', ');
+
+    const lowest = positiveDemand
+      .filter((demand) => demand.required === minDemand)
+      .map((demand) => demand.clan)
+      .join(', ');
+
+    summary.push(
+      `Highest demand: ${highest} at ${maxDemand} required Worship.`,
     );
 
-    if (mostDemandedClans.length > 0) {
-      const names = mostDemandedClans.map((cd) => CLAN_LABELS[cd.clan]).join(', ');
-      summary.push(
-        `Highest demand: ${names} at ${maxRequired} required Worship.`,
-      );
-    }
+    summary.push(
+      `Lowest active demand: ${lowest} at ${minDemand} required Worship.`,
+    );
 
-    if (leastDemandedClans.length > 0) {
-      const names = leastDemandedClans
-        .map((cd) => CLAN_LABELS[cd.clan])
-        .join(', ');
-      summary.push(
-        `Lowest active demand: ${names} at ${minAmongPositive === Infinity ? 0 : minAmongPositive} required Worship.`,
-      );
-    }
+    const unusedClans = clanDemand
+      .filter((demand) => demand.required === 0)
+      .map((demand) => demand.clan);
 
-    if (isComplete && zeroDemandClans.length > 0) {
-      const names = zeroDemandClans
-        .map((cd) => CLAN_LABELS[cd.clan])
-        .join(', ');
-      summary.push(`Unused clans: ${names}.`);
+    if (unusedClans.length > 0) {
+      summary.push(`Unused clans: ${unusedClans.join(', ')}.`);
     }
   }
 
   summary.push(
-    `Requirement profile: ${profileLabel(requirementProfile)}. This is a neutral distribution descriptor, not a strength rating.`,
+    `Requirement profile: ${requirementProfile}. This is a neutral distribution descriptor, not a strength rating.`,
   );
-
-  if (selectedCreatureCount < 5 && creatureEntries.length > 0) {
-    warnings.push(
-      `Incomplete Creature Core: only ${selectedCreatureCount} of 5 unique Creatures selected.`,
-    );
-  }
-
-  for (const missingId of missingIds) {
-    warnings.push(
-      `Unknown Creature record in deck: card ID "${missingId}" not found in the active catalog.`,
-    );
-  }
 
   return {
     selectedCreatureCount,
+    distinctCreatureCount,
     isComplete,
     hasDuplicateCreatures,
-    entries: creatureEntries,
+    entries,
     clanDemand,
     totalWorshipRequired,
     uniqueClanCount,
-    mostDemandedClans,
-    leastDemandedClans,
     requirementProfile,
     summary,
     warnings,

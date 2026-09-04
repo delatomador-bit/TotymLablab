@@ -1,0 +1,895 @@
+:root {
+  color: #f7f0dc;
+  background: #10120f;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(188, 138, 55, 0.12), transparent 30rem),
+    radial-gradient(circle at bottom right, rgba(59, 119, 105, 0.16), transparent 35rem),
+    #10120f;
+}
+
+button {
+  font: inherit;
+}
+
+button:focus-visible {
+  outline: 3px solid #f4c86b;
+  outline-offset: 3px;
+}
+
+.app-shell {
+  width: min(1320px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 48px 0 64px;
+}
+
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.eyebrow,
+.panel-kicker {
+  margin: 0 0 8px;
+  color: #f4c86b;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.panel h2,
+.creature-card h3 {
+  margin: 0;
+  color: #fff9e9;
+}
+
+.hero h1 {
+  max-width: 700px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.hero-copy {
+  max-width: 720px;
+  margin: 18px 0 0;
+  color: #c9c9bd;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.status-pill {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border: 1px solid #5b5b50;
+  border-radius: 999px;
+  color: #e5e5d8;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #d1a349;
+}
+
+.status-valid {
+  border-color: #5eaa84;
+  color: #c8f2d9;
+}
+
+.status-valid .status-dot {
+  background: #70d39b;
+}
+
+.rule-banner {
+  margin-bottom: 24px;
+  padding: 14px 16px;
+  border: 1px solid rgba(244, 200, 107, 0.35);
+  border-radius: 12px;
+  background: rgba(244, 200, 107, 0.08);
+  color: #e7e0ca;
+  line-height: 1.55;
+}
+
+.rule-banner strong {
+  color: #f4c86b;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.summary-card {
+  min-height: 132px;
+  padding: 18px;
+  border: 1px solid #36392f;
+  border-radius: 14px;
+  background: rgba(28, 31, 26, 0.88);
+}
+
+.summary-card span {
+  display: block;
+  color: #aeb2a5;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.summary-card strong {
+  display: block;
+  margin-top: 10px;
+  color: #fff9e9;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.summary-card small {
+  color: #aeb2a5;
+  font-family: inherit;
+  font-size: 0.92rem;
+}
+
+.summary-card p {
+  margin: 10px 0 0;
+  color: #aeb2a5;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.summary-card-auto {
+  border-color: rgba(59, 138, 113, 0.45);
+}
+
+.summary-card-total {
+  border-color: rgba(244, 200, 107, 0.55);
+  background: linear-gradient(145deg, rgba(75, 60, 29, 0.65), rgba(28, 31, 26, 0.9));
+}
+
+.summary-card-total strong {
+  color: #f4c86b;
+}
+
+.summary-valid {
+  border-color: #70d39b;
+  background: linear-gradient(145deg, rgba(35, 88, 61, 0.72), rgba(28, 31, 26, 0.9));
+}
+
+.summary-valid strong {
+  color: #9ef0b9;
+}
+
+.builder-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.builder-column {
+  display: grid;
+  gap: 24px;
+}
+
+.panel {
+  padding: 24px;
+  border: 1px solid #36392f;
+  border-radius: 16px;
+  background: rgba(24, 27, 22, 0.92);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.16);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.panel h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.65rem;
+  letter-spacing: -0.025em;
+}
+
+.panel-heading p:not(.panel-kicker) {
+  max-width: 590px;
+  margin: 8px 0 0;
+  color: #aeb2a5;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.count-badge {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #5c604f;
+  border-radius: 999px;
+  color: #f4c86b;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.creature-list {
+  display: grid;
+  gap: 12px;
+}
+
+.creature-card {
+  padding: 16px;
+  border: 1px solid #393d33;
+  border-radius: 12px;
+  background: #1b1f19;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.creature-card:hover {
+  border-color: #6a705d;
+  transform: translateY(-1px);
+}
+
+.creature-selected {
+  border-color: #d5a846;
+  background: linear-gradient(120deg, rgba(108, 81, 31, 0.36), rgba(27, 31, 25, 1));
+}
+
+.creature-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.card-number {
+  margin: 0 0 5px;
+  color: #9da496;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.creature-card h3 {
+  font-size: 1.15rem;
+}
+
+.button-add,
+.button-remove,
+.button-primary,
+.button-secondary,
+.quantity-button {
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-weight: 800;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.button-add,
+.button-remove {
+  padding: 8px 11px;
+  font-size: 0.82rem;
+}
+
+.button-add {
+  background: #f4c86b;
+  color: #242013;
+}
+
+.button-remove {
+  background: #4b5848;
+  color: #eff6e9;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.requirement-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 14px 0;
+  color: #dce4d5;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.requirement-row span:not(:nth-child(2)) {
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(106, 122, 88, 0.25);
+  text-transform: capitalize;
+}
+
+.requirement-row span:nth-child(2) {
+  color: #8f9687;
+}
+
+.card-text {
+  margin: 5px 0 0;
+  color: #b6b9b0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.card-text strong {
+  color: #dedfd2;
+}
+
+.tarot-panel {
+  background:
+    linear-gradient(135deg, rgba(58, 46, 83, 0.3), transparent 62%),
+    rgba(24, 27, 22, 0.92);
+}
+
+.tarot-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 12px 0 4px;
+}
+
+.tarot-control div {
+  min-width: 140px;
+  text-align: center;
+}
+
+.tarot-control strong {
+  display: block;
+  color: #fff9e9;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 3.4rem;
+  line-height: 1;
+}
+
+.tarot-control span {
+  display: block;
+  margin-top: 8px;
+  color: #aeb2a5;
+  font-size: 0.82rem;
+}
+
+.quantity-button {
+  width: 48px;
+  height: 48px;
+  background: #4d405f;
+  color: #f8f4ff;
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.automatic-panel {
+  background:
+    linear-gradient(145deg, rgba(35, 83, 70, 0.38), transparent 55%),
+    rgba(24, 27, 22, 0.94);
+}
+
+.worship-list {
+  overflow: hidden;
+  border: 1px solid #3d554a;
+  border-radius: 10px;
+}
+
+.worship-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 47px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #34463e;
+}
+
+.worship-row:last-child {
+  border-bottom: 0;
+}
+
+.clan-name {
+  color: #e5eee1;
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.clan-demand {
+  color: #9daf9f;
+  font-size: 0.76rem;
+}
+
+.worship-row strong {
+  min-width: 25px;
+  color: #9ef0b9;
+  font-size: 1.15rem;
+  text-align: right;
+}
+
+.automatic-note {
+  margin: 16px 0 0;
+  color: #aeb9ad;
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+.imposter-panel {
+  border-color: rgba(106, 88, 137, 0.55);
+  background:
+    linear-gradient(135deg, rgba(74, 52, 107, 0.36), transparent 60%),
+    rgba(24, 27, 22, 0.92);
+}
+
+.imposter-count {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 16px;
+}
+
+.imposter-count strong {
+  color: #d6b8ff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.imposter-count span {
+  color: #bbb3c9;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.validation-panel {
+  border-color: rgba(210, 137, 96, 0.48);
+}
+
+.validation-valid {
+  border-color: rgba(112, 211, 155, 0.7);
+  background:
+    linear-gradient(145deg, rgba(31, 86, 56, 0.34), transparent 55%),
+    rgba(24, 27, 22, 0.92);
+}
+
+.validation-summary {
+  margin-top: 14px;
+}
+
+.validation-summary p,
+.message-group p {
+  margin: 0 0 9px;
+  color: #b8bdb2;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.message-group {
+  margin-top: 16px;
+  padding: 13px;
+  border-radius: 10px;
+}
+
+.message-group h3 {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+}
+
+.message-group p:last-child {
+  margin-bottom: 0;
+}
+
+.message-errors {
+  border: 1px solid rgba(219, 122, 86, 0.5);
+  background: rgba(119, 58, 37, 0.2);
+}
+
+.message-errors h3 {
+  color: #ffbf9c;
+}
+
+.message-warnings {
+  border: 1px solid rgba(244, 200, 107, 0.35);
+  background: rgba(119, 96, 40, 0.16);
+}
+
+.message-warnings h3 {
+  color: #f4d98d;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.button-primary,
+.button-secondary {
+  padding: 12px 16px;
+}
+
+.button-primary {
+  background: #f4c86b;
+  color: #242013;
+}
+
+.button-secondary {
+  border: 1px solid #555a4d;
+  background: transparent;
+  color: #e7e8db;
+}
+
+@media (max-width: 1050px) {
+  .summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .builder-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .side-column {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .validation-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    width: min(100% - 24px, 1320px);
+    padding: 28px 0 42px;
+  }
+
+  .hero {
+    display: grid;
+  }
+
+  .status-pill {
+    justify-self: start;
+  }
+
+  .summary-grid,
+  .side-column {
+    grid-template-columns: 1fr;
+  }
+
+  .validation-panel {
+    grid-column: auto;
+  }
+
+  .panel {
+    padding: 18px;
+  }
+
+  .panel-heading {
+    display: grid;
+  }
+
+  .count-badge {
+    justify-self: start;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .actions button {
+    flex: 1;
+  }
+}
+
+.worship-gap-warning {
+  margin-top: 16px;
+}
+
+.message-success {
+  margin-top: 16px;
+  border: 1px solid rgba(112, 211, 155, 0.48);
+  background: rgba(41, 111, 73, 0.18);
+}
+
+.message-success h3 {
+  color: #9ef0b9;
+}
+
+.tarot-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin: -6px 0 18px;
+  color: #aeb2a5;
+  font-size: 0.83rem;
+}
+
+.tarot-stat-row strong {
+  color: #f2ead6;
+}
+
+.tarot-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.tarot-search {
+  display: grid;
+  flex: 1 1 260px;
+  gap: 7px;
+  color: #c5c9bc;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tarot-search input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #4f5549;
+  border-radius: 9px;
+  outline: none;
+  background: #151914;
+  color: #f5f2e7;
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.tarot-search input::placeholder {
+  color: #7e8578;
+}
+
+.tarot-search input:focus {
+  border-color: #d5a846;
+}
+
+.tarot-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.tarot-filter {
+  padding: 9px 11px;
+  border: 1px solid #4f5549;
+  border-radius: 8px;
+  background: transparent;
+  color: #bdc1b5;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.tarot-filter-active {
+  border-color: #d5a846;
+  background: rgba(213, 168, 70, 0.15);
+  color: #f4d98d;
+}
+
+.tarot-catalog {
+  display: grid;
+  gap: 10px;
+}
+
+.tarot-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 14px;
+  border: 1px solid #393d33;
+  border-radius: 11px;
+  background: #1a1e18;
+}
+
+.tarot-card-details {
+  min-width: 0;
+}
+
+.tarot-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tarot-card h3 {
+  margin: 6px 0;
+  color: #f8f2e2;
+  font-size: 1rem;
+}
+
+.tarot-card p {
+  margin: 0;
+  color: #b6b9b0;
+  font-size: 0.81rem;
+  line-height: 1.45;
+}
+
+.tarot-card small {
+  display: block;
+  margin-top: 8px;
+  color: #8e9689;
+  font-size: 0.74rem;
+}
+
+.arcana-badge {
+  display: inline-flex;
+  padding: 4px 7px;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.arcana-major {
+  background: rgba(185, 132, 70, 0.2);
+  color: #f1cd82;
+}
+
+.arcana-minor {
+  background: rgba(103, 103, 154, 0.22);
+  color: #c9c6ff;
+}
+
+.tarot-quantity-control {
+  display: grid;
+  grid-template-columns: 34px minmax(22px, auto) 34px;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.tarot-quantity-control span {
+  min-width: 24px;
+  color: #fff9e9;
+  font-size: 1rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tarot-quantity-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #5b5f52;
+  border-radius: 8px;
+  background: #30382e;
+  color: #f6f3e8;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.selected-tarot-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #3a3e34;
+}
+
+.selected-tarot-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.selected-tarot-heading h3 {
+  margin: 0;
+  color: #f5efde;
+  font-size: 1rem;
+}
+
+.selected-tarot-heading span {
+  color: #9aa194;
+  font-size: 0.78rem;
+}
+
+.selected-tarot-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.selected-tarot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(83, 69, 116, 0.19);
+}
+
+.selected-tarot-row span {
+  color: #e4e4db;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.selected-tarot-row small {
+  display: block;
+  margin-top: 3px;
+  color: #a8a2ba;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.selected-tarot-row strong {
+  color: #d9c8ff;
+}
+
+.empty-state {
+  margin: 14px 0 0;
+  padding: 12px;
+  border: 1px dashed #52584c;
+  border-radius: 9px;
+  color: #9da496;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 560px) {
+  .tarot-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tarot-quantity-control {
+    align-self: flex-end;
+  }
+
+  .tarot-toolbar {
+    align-items: stretch;
+  }
+}
