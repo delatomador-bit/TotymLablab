@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './App.css';
-import { CREATURE_SEED } from './data/creatureSeed';
-import { TAROT_SEED } from './data/tarotSeed';
+import { loadCatalog } from './lib/catalog';
 import { validateTraditionalDeck } from './lib/traditionalDeckValidator';
 import { analyzeTarotSelection } from './lib/tarotValidator';
 import { analyzeWorshipSufficiency } from './lib/worshipSufficiencyAnalyzer';
@@ -18,6 +17,11 @@ const VERIFIED_CREATURE_IDS = [
 ];
 
 function App() {
+  const [allCards, setAllCards] = useState<TotymCard[]>([]);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [isCatalogLoading, setIsCatalogLoading] = useState(true);
+  const [catalogLoadVersion, setCatalogLoadVersion] = useState(0);
+
   const [selectedCreatureIds, setSelectedCreatureIds] = useState<string[]>([]);
   const [tarotQuantities, setTarotQuantities] = useState<Record<string, number>>(
     {},
@@ -25,18 +29,63 @@ function App() {
   const [tarotFilter, setTarotFilter] = useState<TarotFilter>('all');
   const [tarotSearch, setTarotSearch] = useState('');
 
-  const allCards = useMemo<TotymCard[]>(
-    () => [...CREATURE_SEED, ...TAROT_SEED],
-    [],
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadRemoteCatalog() {
+      setIsCatalogLoading(true);
+      setCatalogError(null);
+
+      try {
+        const cards = await loadCatalog();
+
+        if (!isCurrent) {
+          return;
+        }
+
+        setAllCards(cards);
+      } catch (error) {
+        if (!isCurrent) {
+          return;
+        }
+
+        setAllCards([]);
+        setCatalogError(
+          error instanceof Error
+            ? error.message
+            : 'Could not load the TOTYM catalog.',
+        );
+      } finally {
+        if (isCurrent) {
+          setIsCatalogLoading(false);
+        }
+      }
+    }
+
+    void loadRemoteCatalog();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [catalogLoadVersion]);
+
+  const creatureCards = useMemo(
+    () => allCards.filter((card) => card.cardType === 'creature'),
+    [allCards],
+  );
+
+  const tarotCards = useMemo(
+    () => allCards.filter((card) => card.cardType === 'tarot'),
+    [allCards],
   );
 
   const deck = useMemo<TotymDeck>(() => {
-    const creatureCards = selectedCreatureIds.map((cardId) => ({
+    const creatureCardsInDeck = selectedCreatureIds.map((cardId) => ({
       cardId,
       quantity: 1,
     }));
 
-    const tarotCards = Object.entries(tarotQuantities)
+    const tarotCardsInDeck = Object.entries(tarotQuantities)
       .filter(([, quantity]) => quantity > 0)
       .map(([cardId, quantity]) => ({
         cardId,
@@ -48,7 +97,7 @@ function App() {
       name: 'Untitled Traditional Deck',
       format: 'traditional',
       playerMode: '1v1',
-      cards: [...creatureCards, ...tarotCards],
+      cards: [...creatureCardsInDeck, ...tarotCardsInDeck],
     };
   }, [selectedCreatureIds, tarotQuantities]);
 
@@ -74,7 +123,7 @@ function App() {
   const filteredTarot = useMemo(() => {
     const normalizedSearch = tarotSearch.trim().toLowerCase();
 
-    return TAROT_SEED.filter((card) => {
+    return tarotCards.filter((card) => {
       const filterMatches =
         tarotFilter === 'all' || card.arcanaType === tarotFilter;
 
@@ -86,15 +135,21 @@ function App() {
 
       return filterMatches && searchMatches;
     });
-  }, [tarotFilter, tarotSearch]);
+  }, [tarotCards, tarotFilter, tarotSearch]);
 
   const selectedTarot = useMemo(
     () =>
-      TAROT_SEED.filter((card) => (tarotQuantities[card.id] ?? 0) > 0),
-    [tarotQuantities],
+      tarotCards.filter((card) => (tarotQuantities[card.id] ?? 0) > 0),
+    [tarotCards, tarotQuantities],
   );
 
+  const isCatalogUnavailable = isCatalogLoading || Boolean(catalogError);
+
   function toggleCreature(cardId: string) {
+    if (isCatalogUnavailable) {
+      return;
+    }
+
     setSelectedCreatureIds((currentIds) => {
       if (currentIds.includes(cardId)) {
         return currentIds.filter((id) => id !== cardId);
@@ -109,6 +164,10 @@ function App() {
   }
 
   function updateTarotQuantity(card: TotymCard, change: number) {
+    if (isCatalogUnavailable) {
+      return;
+    }
+
     setTarotQuantities((currentQuantities) => {
       const currentQuantity = currentQuantities[card.id] ?? 0;
       const totalTarot = Object.values(currentQuantities).reduce(
@@ -120,12 +179,12 @@ function App() {
       const maximumMajorCards =
         card.arcanaType === 'major' ? 15 : Number.POSITIVE_INFINITY;
 
-      const currentMajorCards = TAROT_SEED.filter(
-        (tarot) => tarot.arcanaType === 'major',
-      ).reduce(
-        (total, tarot) => total + (currentQuantities[tarot.id] ?? 0),
-        0,
-      );
+      const currentMajorCards = tarotCards
+        .filter((tarot) => tarot.arcanaType === 'major')
+        .reduce(
+          (total, tarot) => total + (currentQuantities[tarot.id] ?? 0),
+          0,
+        );
 
       if (change > 0) {
         if (totalTarot >= 30) {
@@ -169,9 +228,23 @@ function App() {
   }
 
   function loadVerifiedExample() {
-    setSelectedCreatureIds(VERIFIED_CREATURE_IDS);
+    if (isCatalogUnavailable) {
+      return;
+    }
 
-    const exampleQuantities: Record<string, number> = {
+    const availableCreatureIds = new Set(
+      creatureCards.map((card) => card.id),
+    );
+
+    const availableTarotIds = new Set(tarotCards.map((card) => card.id));
+
+    setSelectedCreatureIds(
+      VERIFIED_CREATURE_IDS.filter((cardId) =>
+        availableCreatureIds.has(cardId),
+      ),
+    );
+
+    const starterQuantities: Record<string, number> = {
       'T-001': 2,
       'T-002': 2,
       'T-003': 2,
@@ -183,18 +256,28 @@ function App() {
       'T-063': 3,
     };
 
-    setTarotQuantities(exampleQuantities);
+    const verifiedQuantities = Object.fromEntries(
+      Object.entries(starterQuantities).filter(([cardId]) =>
+        availableTarotIds.has(cardId),
+      ),
+    );
+
+    setTarotQuantities(verifiedQuantities);
   }
 
   function copyLimitFor(card: TotymCard) {
     return card.arcanaType === 'major' ? 2 : 3;
   }
 
+  function retryCatalogLoad() {
+    setCatalogLoadVersion((version) => version + 1);
+  }
+
   return (
     <main className="app-shell">
       <header className="hero">
         <div>
-          <p className="eyebrow">TOTYM Binder</p>
+          <p className="eyebrow">TOTYM Lab</p>
           <h1>Traditional Deck Builder</h1>
           <p className="hero-copy">
             Choose 5 distinct Creatures and 30 Tarot cards. The app
@@ -212,6 +295,39 @@ function App() {
           {validation.isValid ? 'Traditional deck valid' : 'Deck in progress'}
         </div>
       </header>
+
+      {isCatalogLoading && (
+        <section className="rule-banner" aria-live="polite">
+          Loading the live TOTYM catalog…
+        </section>
+      )}
+
+      {catalogError && (
+        <section className="rule-banner" aria-live="assertive">
+          <strong>Catalog unavailable:</strong> {catalogError}{' '}
+          <button
+            className="button-secondary"
+            onClick={retryCatalogLoad}
+            type="button"
+          >
+            Retry
+          </button>
+        </section>
+      )}
+
+      {!isCatalogLoading && !catalogError && allCards.length === 0 && (
+        <section className="rule-banner" aria-live="assertive">
+          <strong>Catalog unavailable:</strong> No playable Creature or Tarot
+          cards were returned from the database.{' '}
+          <button
+            className="button-secondary"
+            onClick={retryCatalogLoad}
+            type="button"
+          >
+            Retry
+          </button>
+        </section>
+      )}
 
       <section className="rule-banner">
         <strong>Traditional Mode:</strong> 5 unique Creatures, 30 Tarot, 20
@@ -293,7 +409,7 @@ function App() {
             </div>
 
             <div className="creature-list">
-              {CREATURE_SEED.map((card) => {
+              {creatureCards.map((card) => {
                 const isSelected = selectedCreatureIds.includes(card.id);
                 const selectionLimitReached =
                   selectedCreatureIds.length >= 5 && !isSelected;
@@ -313,7 +429,7 @@ function App() {
 
                       <button
                         className={isSelected ? 'button-remove' : 'button-add'}
-                        disabled={selectionLimitReached}
+                        disabled={selectionLimitReached || isCatalogUnavailable}
                         onClick={() => toggleCreature(card.id)}
                         type="button"
                       >
@@ -344,6 +460,12 @@ function App() {
                 );
               })}
             </div>
+
+            {!isCatalogLoading && !catalogError && creatureCards.length === 0 && (
+              <p className="empty-state">
+                No playable Creature cards are available from the catalog.
+              </p>
+            )}
           </article>
 
           <article className="panel tarot-panel">
@@ -351,10 +473,7 @@ function App() {
               <div>
                 <p className="panel-kicker">Step 2</p>
                 <h2>Tarot Shell</h2>
-                <p>
-                  Select up to 30 Tarot cards. This starter catalog is ready
-                  for the full catalog import later.
-                </p>
+                <p>Select up to 30 Tarot cards from the live TOTYM catalog.</p>
               </div>
 
               <span className="count-badge">
@@ -376,6 +495,7 @@ function App() {
               <label className="tarot-search">
                 <span>Search Tarot</span>
                 <input
+                  disabled={isCatalogUnavailable}
                   onChange={(event) => setTarotSearch(event.target.value)}
                   placeholder="Name, card number, or suit"
                   type="search"
@@ -395,6 +515,7 @@ function App() {
                         ? 'tarot-filter tarot-filter-active'
                         : 'tarot-filter'
                     }
+                    disabled={isCatalogUnavailable}
                     key={filter}
                     onClick={() => setTarotFilter(filter)}
                     type="button"
@@ -420,7 +541,10 @@ function App() {
                   tarotValidation.majorArcanaCount >= 15;
 
                 const addDisabled =
-                  totalLimitReached || copyLimitReached || majorLimitReached;
+                  totalLimitReached ||
+                  copyLimitReached ||
+                  majorLimitReached ||
+                  isCatalogUnavailable;
 
                 return (
                   <article className="tarot-card" key={card.id}>
@@ -450,7 +574,7 @@ function App() {
                       <button
                         aria-label={`Remove one ${card.name}`}
                         className="tarot-quantity-button"
-                        disabled={quantity === 0}
+                        disabled={quantity === 0 || isCatalogUnavailable}
                         onClick={() => updateTarotQuantity(card, -1)}
                         type="button"
                       >
@@ -476,9 +600,18 @@ function App() {
               })}
             </div>
 
-            {filteredTarot.length === 0 && (
+            {!isCatalogLoading &&
+              !catalogError &&
+              tarotCards.length > 0 &&
+              filteredTarot.length === 0 && (
+                <p className="empty-state">
+                  No Tarot cards match your current search or filter.
+                </p>
+              )}
+
+            {!isCatalogLoading && !catalogError && tarotCards.length === 0 && (
               <p className="empty-state">
-                No starter Tarot cards match your current search or filter.
+                No playable Tarot cards are available from the catalog.
               </p>
             )}
 
@@ -511,7 +644,7 @@ function App() {
 
               {selectedTarot.length === 0 ? (
                 <p className="empty-state">
-                  Select Tarot cards from the starter catalog above.
+                  Select Tarot cards from the catalog above.
                 </p>
               ) : (
                 <div className="selected-tarot-list">
@@ -640,12 +773,18 @@ function App() {
       </section>
 
       <footer className="actions">
-        <button className="button-secondary" onClick={resetDeck} type="button">
+        <button
+          className="button-secondary"
+          disabled={isCatalogUnavailable}
+          onClick={resetDeck}
+          type="button"
+        >
           Reset deck
         </button>
 
         <button
           className="button-primary"
+          disabled={isCatalogUnavailable}
           onClick={loadVerifiedExample}
           type="button"
         >
