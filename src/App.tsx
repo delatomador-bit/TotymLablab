@@ -4,6 +4,7 @@ import { loadCatalog } from './lib/catalog';
 import { validateTraditionalDeck } from './lib/traditionalDeckValidator';
 import { analyzeTarotSelection } from './lib/tarotValidator';
 import { analyzeWorshipSufficiency } from './lib/worshipSufficiencyAnalyzer';
+import CreatureCorePanel from './components/CreatureCorePanel';
 import type {
   PlayerMode,
   TarotSuit,
@@ -890,6 +891,10 @@ function App() {
         </div>
 
         <aside className="builder-column side-column">
+          <article className="panel creature-analysis-panel">
+            <CreatureCorePanel profile={validation.creatureCore} />
+          </article>
+
           <article className="panel automatic-panel">
             <div className="panel-heading">
               <div>
