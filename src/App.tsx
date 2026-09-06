@@ -4,9 +4,23 @@ import { loadCatalog } from './lib/catalog';
 import { validateTraditionalDeck } from './lib/traditionalDeckValidator';
 import { analyzeTarotSelection } from './lib/tarotValidator';
 import { analyzeWorshipSufficiency } from './lib/worshipSufficiencyAnalyzer';
-import type { TotymCard, TotymDeck } from './types/totym';
+import type {
+  PlayerMode,
+  TarotSuit,
+  TotymCard,
+  TotymDeck,
+} from './types/totym';
 
 type TarotFilter = 'all' | 'major' | 'minor';
+type SuitFilter = TarotSuit | 'all';
+
+type TargetFilter =
+  | 'all'
+  | 'self'
+  | 'opponent'
+  | 'two_opponents'
+  | 'any'
+  | 'all_players';
 
 const VERIFIED_CREATURE_IDS = [
   'C-001',
@@ -16,6 +30,35 @@ const VERIFIED_CREATURE_IDS = [
   'C-038',
 ];
 
+const PLAYER_MODES: PlayerMode[] = [
+  '1v1',
+  '3-player',
+  '4-player',
+];
+
+const SUIT_FILTER_OPTIONS: Array<{
+  value: SuitFilter;
+  label: string;
+}> = [
+  { value: 'all', label: 'All' },
+  { value: 'wands', label: 'Wands' },
+  { value: 'cups', label: 'Cups' },
+  { value: 'swords', label: 'Swords' },
+  { value: 'pentacles', label: 'Pentacles' },
+];
+
+const TARGET_FILTER_OPTIONS: Array<{
+  value: TargetFilter;
+  label: string;
+}> = [
+  { value: 'all', label: 'Any target' },
+  { value: 'self', label: 'Self' },
+  { value: 'opponent', label: 'Opponent' },
+  { value: 'two_opponents', label: 'Two opponents' },
+  { value: 'any', label: 'Any player' },
+  { value: 'all_players', label: 'All players' },
+];
+
 function App() {
   const [allCards, setAllCards] = useState<TotymCard[]>([]);
   const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -23,11 +66,16 @@ function App() {
   const [catalogLoadVersion, setCatalogLoadVersion] = useState(0);
 
   const [selectedCreatureIds, setSelectedCreatureIds] = useState<string[]>([]);
-  const [tarotQuantities, setTarotQuantities] = useState<Record<string, number>>(
-    {},
-  );
+
+  const [tarotQuantities, setTarotQuantities] = useState<
+    Record<string, number>
+  >({});
+
   const [tarotFilter, setTarotFilter] = useState<TarotFilter>('all');
+  const [suitFilter, setSuitFilter] = useState<SuitFilter>('all');
+  const [targetFilter, setTargetFilter] = useState<TargetFilter>('all');
   const [tarotSearch, setTarotSearch] = useState('');
+  const [playerMode, setPlayerMode] = useState<PlayerMode>('1v1');
 
   useEffect(() => {
     let isCurrent = true;
@@ -50,6 +98,7 @@ function App() {
         }
 
         setAllCards([]);
+
         setCatalogError(
           error instanceof Error
             ? error.message
@@ -96,10 +145,10 @@ function App() {
       id: 'traditional-deck-builder',
       name: 'Untitled Traditional Deck',
       format: 'traditional',
-      playerMode: '1v1',
+      playerMode,
       cards: [...creatureCardsInDeck, ...tarotCardsInDeck],
     };
-  }, [selectedCreatureIds, tarotQuantities]);
+  }, [playerMode, selectedCreatureIds, tarotQuantities]);
 
   const validation = useMemo(
     () => validateTraditionalDeck(deck, allCards),
@@ -124,18 +173,35 @@ function App() {
     const normalizedSearch = tarotSearch.trim().toLowerCase();
 
     return tarotCards.filter((card) => {
-      const filterMatches =
+      const arcanaMatches =
         tarotFilter === 'all' || card.arcanaType === tarotFilter;
+
+      const suitMatches =
+        suitFilter === 'all' || card.suit === suitFilter;
+
+      const targetMatches =
+        targetFilter === 'all' ||
+        (targetFilter === 'all_players'
+          ? card.targetType === 'all'
+          : card.targetType === targetFilter);
 
       const searchMatches =
         normalizedSearch.length === 0 ||
         card.name.toLowerCase().includes(normalizedSearch) ||
         card.cardNumber.toLowerCase().includes(normalizedSearch) ||
-        card.suit?.toLowerCase().includes(normalizedSearch);
+        card.suit?.toLowerCase().includes(normalizedSearch) ||
+        card.targetType?.toLowerCase().includes(normalizedSearch) ||
+        card.effectText?.toLowerCase().includes(normalizedSearch);
 
-      return filterMatches && searchMatches;
+      return arcanaMatches && suitMatches && targetMatches && searchMatches;
     });
-  }, [tarotCards, tarotFilter, tarotSearch]);
+  }, [
+    tarotCards,
+    tarotFilter,
+    suitFilter,
+    targetFilter,
+    tarotSearch,
+  ]);
 
   const selectedTarot = useMemo(
     () =>
@@ -170,14 +236,13 @@ function App() {
 
     setTarotQuantities((currentQuantities) => {
       const currentQuantity = currentQuantities[card.id] ?? 0;
+
       const totalTarot = Object.values(currentQuantities).reduce(
         (total, quantity) => total + quantity,
         0,
       );
 
       const maximumCopies = card.arcanaType === 'major' ? 2 : 3;
-      const maximumMajorCards =
-        card.arcanaType === 'major' ? 15 : Number.POSITIVE_INFINITY;
 
       const currentMajorCards = tarotCards
         .filter((tarot) => tarot.arcanaType === 'major')
@@ -195,10 +260,7 @@ function App() {
           return currentQuantities;
         }
 
-        if (
-          card.arcanaType === 'major' &&
-          currentMajorCards >= maximumMajorCards
-        ) {
+        if (card.arcanaType === 'major' && currentMajorCards >= 15) {
           return currentQuantities;
         }
       }
@@ -224,7 +286,10 @@ function App() {
     setSelectedCreatureIds([]);
     setTarotQuantities({});
     setTarotFilter('all');
+    setSuitFilter('all');
+    setTargetFilter('all');
     setTarotSearch('');
+    setPlayerMode('1v1');
   }
 
   function loadVerifiedExample() {
@@ -236,7 +301,9 @@ function App() {
       creatureCards.map((card) => card.id),
     );
 
-    const availableTarotIds = new Set(tarotCards.map((card) => card.id));
+    const availableTarotIds = new Set(
+      tarotCards.map((card) => card.id),
+    );
 
     setSelectedCreatureIds(
       VERIFIED_CREATURE_IDS.filter((cardId) =>
@@ -278,7 +345,9 @@ function App() {
       <header className="hero">
         <div>
           <p className="eyebrow">TOTYM Lab</p>
+
           <h1>Traditional Deck Builder</h1>
+
           <p className="hero-copy">
             Choose 5 distinct Creatures and 30 Tarot cards. The app
             automatically calculates the Worship package and reserves five
@@ -305,6 +374,7 @@ function App() {
       {catalogError && (
         <section className="rule-banner" aria-live="assertive">
           <strong>Catalog unavailable:</strong> {catalogError}{' '}
+
           <button
             className="button-secondary"
             onClick={retryCatalogLoad}
@@ -319,6 +389,7 @@ function App() {
         <section className="rule-banner" aria-live="assertive">
           <strong>Catalog unavailable:</strong> No playable Creature or Tarot
           cards were returned from the database.{' '}
+
           <button
             className="button-secondary"
             onClick={retryCatalogLoad}
@@ -335,22 +406,61 @@ function App() {
         and 15 total; Minor Arcana are limited to 3 copies each.
       </section>
 
+      <section className="mode-selector" aria-label="Player mode">
+        <div>
+          <p className="panel-kicker">Game Mode</p>
+
+          <h2>Player Count</h2>
+
+          <p className="mode-selector-copy">
+            Choose a player mode before building your Tarot shell. Some Tarot
+            effects are stronger, weaker, or unavailable depending on the
+            number of players.
+          </p>
+        </div>
+
+        <div
+          className="mode-selector-controls"
+          role="group"
+          aria-label="Choose player mode"
+        >
+          {PLAYER_MODES.map((mode) => (
+            <button
+              className={
+                playerMode === mode
+                  ? 'mode-selector-button mode-selector-button-active'
+                  : 'mode-selector-button'
+              }
+              key={mode}
+              onClick={() => setPlayerMode(mode)}
+              type="button"
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section className="summary-grid" aria-label="Deck summary">
         <article className="summary-card">
           <span>Creatures</span>
+
           <strong>
             {validation.counts.manualCreatures}
             <small>/ 5</small>
           </strong>
+
           <p>{validation.counts.distinctCreatures} distinct selected</p>
         </article>
 
         <article className="summary-card">
           <span>Tarot</span>
+
           <strong>
             {tarotValidation.totalTarot}
             <small>/ 30</small>
           </strong>
+
           <p>
             {tarotValidation.majorArcanaCount} Major ·{' '}
             {tarotValidation.minorArcanaCount} Minor
@@ -359,19 +469,23 @@ function App() {
 
         <article className="summary-card summary-card-auto">
           <span>Generated Worship</span>
+
           <strong>
             {validation.counts.generatedWorship}
             <small>/ 20</small>
           </strong>
+
           <p>Automatic package</p>
         </article>
 
         <article className="summary-card summary-card-auto">
           <span>Reserved Imposters</span>
+
           <strong>
             {validation.counts.reservedImposters}
             <small>/ 5</small>
           </strong>
+
           <p>Automatic component</p>
         </article>
 
@@ -381,10 +495,12 @@ function App() {
           }`}
         >
           <span>Computed Deck</span>
+
           <strong>
             {validation.counts.computedTotal}
             <small>/ 60</small>
           </strong>
+
           <p>
             {validation.isValid
               ? 'Ready for Traditional Mode'
@@ -399,7 +515,9 @@ function App() {
             <div className="panel-heading">
               <div>
                 <p className="panel-kicker">Step 1</p>
+
                 <h2>Creature Core</h2>
+
                 <p>Select exactly five different Creatures.</p>
               </div>
 
@@ -411,6 +529,7 @@ function App() {
             <div className="creature-list">
               {creatureCards.map((card) => {
                 const isSelected = selectedCreatureIds.includes(card.id);
+
                 const selectionLimitReached =
                   selectedCreatureIds.length >= 5 && !isSelected;
 
@@ -424,12 +543,17 @@ function App() {
                     <div className="creature-card-top">
                       <div>
                         <p className="card-number">{card.cardNumber}</p>
+
                         <h3>{card.name}</h3>
                       </div>
 
                       <button
-                        className={isSelected ? 'button-remove' : 'button-add'}
-                        disabled={selectionLimitReached || isCatalogUnavailable}
+                        className={
+                          isSelected ? 'button-remove' : 'button-add'
+                        }
+                        disabled={
+                          selectionLimitReached || isCatalogUnavailable
+                        }
                         onClick={() => toggleCreature(card.id)}
                         type="button"
                       >
@@ -442,7 +566,9 @@ function App() {
                         {card.creatureRequirements?.left.required}{' '}
                         {card.creatureRequirements?.left.clan}
                       </span>
+
                       <span>+</span>
+
                       <span>
                         {card.creatureRequirements?.right.required}{' '}
                         {card.creatureRequirements?.right.clan}
@@ -461,19 +587,25 @@ function App() {
               })}
             </div>
 
-            {!isCatalogLoading && !catalogError && creatureCards.length === 0 && (
-              <p className="empty-state">
-                No playable Creature cards are available from the catalog.
-              </p>
-            )}
+            {!isCatalogLoading &&
+              !catalogError &&
+              creatureCards.length === 0 && (
+                <p className="empty-state">
+                  No playable Creature cards are available from the catalog.
+                </p>
+              )}
           </article>
 
           <article className="panel tarot-panel">
             <div className="panel-heading">
               <div>
                 <p className="panel-kicker">Step 2</p>
+
                 <h2>Tarot Shell</h2>
-                <p>Select up to 30 Tarot cards from the live TOTYM catalog.</p>
+
+                <p>
+                  Select up to 30 Tarot cards from the live TOTYM catalog.
+                </p>
               </div>
 
               <span className="count-badge">
@@ -486,45 +618,100 @@ function App() {
                 Major Arcana:{' '}
                 <strong>{tarotValidation.majorArcanaCount} / 15</strong>
               </span>
+
               <span>
-                Minor Arcana: <strong>{tarotValidation.minorArcanaCount}</strong>
+                Minor Arcana:{' '}
+                <strong>{tarotValidation.minorArcanaCount}</strong>
               </span>
             </div>
 
             <div className="tarot-toolbar">
               <label className="tarot-search">
                 <span>Search Tarot</span>
+
                 <input
                   disabled={isCatalogUnavailable}
                   onChange={(event) => setTarotSearch(event.target.value)}
-                  placeholder="Name, card number, or suit"
+                  placeholder="Name, card number, effect, or suit"
                   type="search"
                   value={tarotSearch}
                 />
               </label>
 
               <div
-                aria-label="Filter Tarot cards"
+                aria-label="Filter Tarot cards by Arcana"
                 className="tarot-filter-group"
                 role="group"
               >
-                {(['all', 'major', 'minor'] as TarotFilter[]).map((filter) => (
+                <span className="tarot-filter-label">Arcana</span>
+
+                {(['all', 'major', 'minor'] as TarotFilter[]).map(
+                  (filter) => (
+                    <button
+                      className={
+                        tarotFilter === filter
+                          ? 'tarot-filter tarot-filter-active'
+                          : 'tarot-filter'
+                      }
+                      disabled={isCatalogUnavailable}
+                      key={filter}
+                      onClick={() => setTarotFilter(filter)}
+                      type="button"
+                    >
+                      {filter === 'all'
+                        ? 'All'
+                        : filter === 'major'
+                          ? 'Major'
+                          : 'Minor'}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <div
+                aria-label="Filter Tarot cards by Suit"
+                className="tarot-filter-group"
+                role="group"
+              >
+                <span className="tarot-filter-label">Suit</span>
+
+                {SUIT_FILTER_OPTIONS.map(({ value, label }) => (
                   <button
                     className={
-                      tarotFilter === filter
+                      suitFilter === value
                         ? 'tarot-filter tarot-filter-active'
                         : 'tarot-filter'
                     }
                     disabled={isCatalogUnavailable}
-                    key={filter}
-                    onClick={() => setTarotFilter(filter)}
+                    key={value}
+                    onClick={() => setSuitFilter(value)}
                     type="button"
                   >
-                    {filter === 'all'
-                      ? 'All'
-                      : filter === 'major'
-                        ? 'Major'
-                        : 'Minor'}
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                aria-label="Filter Tarot cards by Target"
+                className="tarot-filter-group"
+                role="group"
+              >
+                <span className="tarot-filter-label">Target</span>
+
+                {TARGET_FILTER_OPTIONS.map(({ value, label }) => (
+                  <button
+                    className={
+                      targetFilter === value
+                        ? 'tarot-filter tarot-filter-active'
+                        : 'tarot-filter'
+                    }
+                    disabled={isCatalogUnavailable}
+                    key={value}
+                    onClick={() => setTargetFilter(value)}
+                    type="button"
+                  >
+                    {label}
                   </button>
                 ))}
               </div>
@@ -535,7 +722,9 @@ function App() {
                 const quantity = tarotQuantities[card.id] ?? 0;
                 const copyLimit = copyLimitFor(card);
                 const totalLimitReached = tarotValidation.totalTarot >= 30;
+
                 const copyLimitReached = quantity >= copyLimit;
+
                 const majorLimitReached =
                   card.arcanaType === 'major' &&
                   tarotValidation.majorArcanaCount >= 15;
@@ -546,11 +735,22 @@ function App() {
                   majorLimitReached ||
                   isCatalogUnavailable;
 
+                const isUnavailableIn1v1 =
+                  playerMode === '1v1' &&
+                  card.targetType === 'two_opponents';
+
+                const hasLowValueIn1v1 =
+                  playerMode === '1v1' &&
+                  card.effectText?.toUpperCase().includes(
+                    'REVERSE TURN ORDER',
+                  );
+
                 return (
                   <article className="tarot-card" key={card.id}>
                     <div className="tarot-card-details">
                       <div className="tarot-card-heading">
                         <p className="card-number">{card.cardNumber}</p>
+
                         <span
                           className={`arcana-badge arcana-${card.arcanaType}`}
                         >
@@ -561,7 +761,23 @@ function App() {
                       </div>
 
                       <h3>{card.name}</h3>
+
                       <p>{card.effectText}</p>
+
+                      {isUnavailableIn1v1 && (
+                        <small className="tarot-mode-warning">
+                          Not playable in 1v1: this effect requires two
+                          opponents.
+                        </small>
+                      )}
+
+                      {hasLowValueIn1v1 && (
+                        <small className="tarot-mode-warning">
+                          Limited value in 1v1: reversing turn order does not
+                          change a two-player sequence.
+                        </small>
+                      )}
+
                       <small>
                         Copy limit: {copyLimit}
                         {card.arcanaType === 'major'
@@ -609,15 +825,18 @@ function App() {
                 </p>
               )}
 
-            {!isCatalogLoading && !catalogError && tarotCards.length === 0 && (
-              <p className="empty-state">
-                No playable Tarot cards are available from the catalog.
-              </p>
-            )}
+            {!isCatalogLoading &&
+              !catalogError &&
+              tarotCards.length === 0 && (
+                <p className="empty-state">
+                  No playable Tarot cards are available from the catalog.
+                </p>
+              )}
 
             {tarotValidation.copyLimitViolations.length > 0 && (
               <div className="message-group message-errors">
                 <h3>Tarot copy-limit issues</h3>
+
                 {tarotValidation.copyLimitViolations.map((violation) => (
                   <p key={violation.cardId}>
                     {violation.cardName}: {violation.quantity} selected, but{' '}
@@ -630,6 +849,7 @@ function App() {
             {tarotValidation.hasTooManyMajorArcana && (
               <div className="message-group message-errors">
                 <h3>Too many Major Arcana</h3>
+
                 <p>
                   Traditional Mode allows at most 15 Major Arcana Tarot cards.
                 </p>
@@ -652,12 +872,14 @@ function App() {
                     <div className="selected-tarot-row" key={card.id}>
                       <span>
                         {card.name}
+
                         <small>
                           {card.arcanaType === 'major'
                             ? 'Major Arcana'
                             : `Minor · ${card.suit}`}
                         </small>
                       </span>
+
                       <strong>×{tarotQuantities[card.id]}</strong>
                     </div>
                   ))}
@@ -672,7 +894,9 @@ function App() {
             <div className="panel-heading">
               <div>
                 <p className="panel-kicker">Automatic</p>
+
                 <h2>Worship Package</h2>
+
                 <p>
                   Derived from the aggregate requirements of your Creature
                   Core.
@@ -688,9 +912,11 @@ function App() {
               {validation.worshipPackage.allocations.map((allocation) => (
                 <div className="worship-row" key={allocation.clan}>
                   <span className="clan-name">{allocation.clan}</span>
+
                   <span className="clan-demand">
                     Demand: {allocation.demand}
                   </span>
+
                   <strong>{allocation.quantity}</strong>
                 </div>
               ))}
@@ -705,6 +931,7 @@ function App() {
             {worshipSufficiency.gaps.length > 0 && (
               <div className="message-group message-errors worship-gap-warning">
                 <h3>Perfect Totem coverage gap</h3>
+
                 {worshipSufficiency.warnings.map((warning) => (
                   <p key={warning}>{warning}</p>
                 ))}
@@ -715,6 +942,7 @@ function App() {
               worshipSufficiency.canPerfectlySupportEveryCreature && (
                 <div className="message-group message-success">
                   <h3>Perfect Totem coverage</h3>
+
                   <p>
                     This Worship package contains at least the highest
                     single-Creature requirement for every clan used by the
@@ -726,10 +954,12 @@ function App() {
 
           <article className="panel imposter-panel">
             <p className="panel-kicker">Automatic</p>
+
             <h2>Reserved Imposters</h2>
 
             <div className="imposter-count">
               <strong>5</strong>
+
               <span>
                 Reserved for the completed Traditional Mode deck. These are
                 not manually selected.
@@ -743,6 +973,7 @@ function App() {
             }`}
           >
             <p className="panel-kicker">Validation</p>
+
             <h2>{validation.isValid ? 'Deck is ready' : 'Finish your deck'}</h2>
 
             <div className="validation-summary">
@@ -754,6 +985,7 @@ function App() {
             {validation.errors.length > 0 && (
               <div className="message-group message-errors">
                 <h3>Required fixes</h3>
+
                 {validation.errors.map((error) => (
                   <p key={error}>{error}</p>
                 ))}
@@ -763,6 +995,7 @@ function App() {
             {validation.warnings.length > 0 && (
               <div className="message-group message-warnings">
                 <h3>Notes</h3>
+
                 {validation.warnings.map((warning) => (
                   <p key={warning}>{warning}</p>
                 ))}

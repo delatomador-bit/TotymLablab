@@ -64,3 +64,14 @@ export const TOTYM_RULESET_V2_1 = {
 } as const;
 
 export type TotymRuleset = typeof TOTYM_RULESET_V2_1;
+
+/**
+ * Compatibility view for existing analysis modules.
+ *
+ * The app’s earlier deck analyzer uses `legalDeckRules`; newer ruleset
+ * configuration uses `traditionalMode`. Both reference the same v2.1 values.
+ */
+export const TOTYM_RULESET_V2 = {
+  ...TOTYM_RULESET_V2_1,
+  legalDeckRules: TOTYM_RULESET_V2_1.traditionalMode,
+} as const;
