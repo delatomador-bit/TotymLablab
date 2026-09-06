@@ -893,3 +893,111 @@ button:disabled {
     align-items: stretch;
   }
 }
+
+.mode-selector {
+  align-items: center;
+  background: linear-gradient(
+    135deg,
+    rgba(32, 45, 35, 0.9),
+    rgba(23, 31, 25, 0.94)
+  );
+  border: 1px solid rgba(189, 151, 71, 0.42);
+  border-radius: 14px;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin: 18px 0 24px;
+  padding: 18px 20px;
+}
+
+.mode-selector h2 {
+  font-size: 1.15rem;
+  margin: 2px 0 4px;
+}
+
+.mode-selector-copy {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 650px;
+}
+
+.mode-selector-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mode-selector-button {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 9px 13px;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.mode-selector-button:hover {
+  border-color: rgba(216, 174, 79, 0.75);
+  color: var(--text-h);
+}
+
+.mode-selector-button-active {
+  background: rgba(216, 174, 79, 0.16);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.tarot-toolbar {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tarot-filter-group {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tarot-filter-label {
+  color: var(--text-dim);
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-right: 2px;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.tarot-mode-warning {
+  color: var(--warning);
+  display: block;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  margin-top: 7px;
+}
+
+@media (max-width: 720px) {
+  .mode-selector {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mode-selector-controls {
+    width: 100%;
+  }
+
+  .mode-selector-button {
+    flex: 1;
+    text-align: center;
+  }
+}

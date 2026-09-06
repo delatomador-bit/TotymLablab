@@ -47,7 +47,7 @@ function getRequirementProfile(
  * Analyzes only factual Creature data from the selected deck.
  *
  * It does not evaluate strength, card effects, Tarot, player mode,
- * hidden information, or probability. It only calculates the worship
+ * hidden information, or probability. It only calculates the Worship
  * demand implied by selected Creature requirements.
  */
 export function analyzeCreatureCore(
@@ -104,7 +104,6 @@ export function analyzeCreatureCore(
 
   const distinctCreatureCount = entries.length;
   const hasDuplicateCreatures = duplicateCreatureIds.length > 0;
-
   const clanDemand = createEmptyDemand();
 
   entries.forEach((entry) => {
@@ -119,11 +118,21 @@ export function analyzeCreatureCore(
       }
     });
 
-    clanDemand.find((demand) => demand.clan === entry.left.clan)!.required +=
-      entry.left.required;
+    const leftDemand = clanDemand.find(
+      (demand) => demand.clan === entry.left.clan,
+    );
 
-    clanDemand.find((demand) => demand.clan === entry.right.clan)!.required +=
-      entry.right.required;
+    if (leftDemand) {
+      leftDemand.required += entry.left.required;
+    }
+
+    const rightDemand = clanDemand.find(
+      (demand) => demand.clan === entry.right.clan,
+    );
+
+    if (rightDemand) {
+      rightDemand.required += entry.right.required;
+    }
   });
 
   const totalWorshipRequired = clanDemand.reduce(
@@ -131,9 +140,33 @@ export function analyzeCreatureCore(
     0,
   );
 
-  const uniqueClanCount = clanDemand.filter(
-    (demand) => demand.required > 0,
-  ).length;
+  const positiveDemand = clanDemand.filter((demand) => demand.required > 0);
+
+  const uniqueClanCount = positiveDemand.length;
+
+  const highestDemand =
+    positiveDemand.length > 0
+      ? Math.max(...positiveDemand.map((demand) => demand.required))
+      : 0;
+
+  const lowestDemand =
+    positiveDemand.length > 0
+      ? Math.min(...positiveDemand.map((demand) => demand.required))
+      : 0;
+
+  const mostDemandedClans =
+    highestDemand > 0
+      ? positiveDemand.filter(
+          (demand) => demand.required === highestDemand,
+        )
+      : [];
+
+  const leastDemandedClans =
+    lowestDemand > 0
+      ? positiveDemand.filter(
+          (demand) => demand.required === lowestDemand,
+        )
+      : [];
 
   const isComplete =
     distinctCreatureCount === 5 &&
@@ -179,27 +212,21 @@ export function analyzeCreatureCore(
     );
   }
 
-  if (uniqueClanCount > 0) {
-    const positiveDemand = clanDemand.filter((demand) => demand.required > 0);
-    const maxDemand = Math.max(...positiveDemand.map((demand) => demand.required));
-    const minDemand = Math.min(...positiveDemand.map((demand) => demand.required));
-
-    const highest = positiveDemand
-      .filter((demand) => demand.required === maxDemand)
+  if (positiveDemand.length > 0) {
+    const highest = mostDemandedClans
       .map((demand) => demand.clan)
       .join(', ');
 
-    const lowest = positiveDemand
-      .filter((demand) => demand.required === minDemand)
+    const lowest = leastDemandedClans
       .map((demand) => demand.clan)
       .join(', ');
 
     summary.push(
-      `Highest demand: ${highest} at ${maxDemand} required Worship.`,
+      `Highest demand: ${highest} at ${highestDemand} required Worship.`,
     );
 
     summary.push(
-      `Lowest active demand: ${lowest} at ${minDemand} required Worship.`,
+      `Lowest active demand: ${lowest} at ${lowestDemand} required Worship.`,
     );
 
     const unusedClans = clanDemand
@@ -220,8 +247,11 @@ export function analyzeCreatureCore(
     distinctCreatureCount,
     isComplete,
     hasDuplicateCreatures,
+    duplicateCreatureIds,
     entries,
     clanDemand,
+    mostDemandedClans,
+    leastDemandedClans,
     totalWorshipRequired,
     uniqueClanCount,
     requirementProfile,

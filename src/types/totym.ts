@@ -5,11 +5,68 @@
   | 'zealots'
   | 'mystics';
 
-export type CardType = 'creature' | 'tarot' | 'worship' | 'imposter';
+export type CardType =
+  | 'creature'
+  | 'tarot'
+  | 'worship'
+  | 'imposter'
+  | 'relic';
 
 export type DeckFormat = 'traditional';
 
-export type PlayerMode = '1v1';
+export type PlayerMode = '1v1' | '3-player' | '4-player';
+
+export type ArcanaType = 'major' | 'minor' | 'placeholder' | null;
+
+export type TarotSuit = 'wands' | 'cups' | 'swords' | 'pentacles' | null;
+
+export type TargetType =
+  | 'self'
+  | 'opponent'
+  | 'two_opponents'
+  | 'any'
+  | 'all'
+  | null;
+
+export type TarotSuitCategory =
+  | 'major'
+  | 'wands'
+  | 'cups'
+  | 'swords'
+  | 'pentacles';
+
+export type TarotTargetCategory =
+  | 'self'
+  | 'opponent'
+  | 'two_opponents'
+  | 'any'
+  | 'all';
+
+export type TarotEffectTag =
+  | 'draw'
+  | 'redraw'
+  | 'shuffle'
+  | 'discard'
+  | 'reveal'
+  | 'block_draw'
+  | 'block_tarot'
+  | 'block_worship'
+  | 'block_totem_lock'
+  | 'block_imposter'
+  | 'switch_creature'
+  | 'curse'
+  | 'convert_worship'
+  | 'collapse_totem'
+  | 'extra_tarot_action'
+  | 'extra_worship_action'
+  | 'extra_totem_lock_action'
+  | 'skip_turn'
+  | 'skip_turn_draw'
+  | 'look_arrange'
+  | 'coin_flip'
+  | 'gamble'
+  | 'reverse_turn_order'
+  | 'other';
 
 export interface WorshipRequirement {
   clan: Clan;
@@ -26,13 +83,14 @@ export interface TotymCard {
   cardNumber: string;
   name: string;
   cardType: CardType;
-arcanaType: ArcanaType;
-  suit: string | null;
-  targetType: string | null;
+  arcanaType: ArcanaType;
+  suit: TarotSuit | string | null;
+  targetType: TargetType | string | null;
   effectText: string | null;
-  immunity?: string;
-  blessing?: string;
-  creatureRequirements?: CreatureRequirements;
+  immunity?: string | null;
+  blessing?: string | null;
+  creatureRequirements?: CreatureRequirements | null;
+  effectTags?: TarotEffectTag[] | string[];
 }
 
 export interface DeckCard {
@@ -79,6 +137,8 @@ export interface CreatureCoreProfile {
   duplicateCreatureIds?: string[];
   entries: CreatureCoreEntry[];
   clanDemand: ClanDemand[];
+  mostDemandedClans: ClanDemand[];
+  leastDemandedClans: ClanDemand[];
   totalWorshipRequired: number;
   uniqueClanCount: number;
   requirementProfile: RequirementProfile;
@@ -101,6 +161,7 @@ export interface GeneratedWorshipPackage {
   explanation: string[];
   warnings: string[];
 }
+
 export interface TraditionalDeckCounts {
   manualCreatures: number;
   distinctCreatures: number;
@@ -118,6 +179,29 @@ export interface TraditionalDeckValidation {
   errors: string[];
   warnings: string[];
   summary: string[];
+}
+
+export interface CountSummary {
+  total: number;
+  creatures: number;
+  worship: number;
+  tarot: number;
+  imposters: number;
+  majorArcana: number;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  counts: CountSummary;
+}
+
+export interface FormatWarning {
+  cardId: string;
+  cardName: string;
+  severity: 'warning' | 'info';
+  message: string;
 }
 
 export interface PerfectTotemRequirement {
@@ -145,8 +229,6 @@ export interface WorshipSufficiencyProfile {
   warnings: string[];
 }
 
-export type ArcanaType = 'major' | 'minor' | 'placeholder' | null;
-
 export interface TarotValidationProfile {
   totalTarot: number;
   majorArcanaCount: number;
@@ -160,4 +242,109 @@ export interface TarotValidationProfile {
   }>;
   hasTooManyMajorArcana: boolean;
   isValid: boolean;
+}
+
+export interface TarotEffectTagCount {
+  tag: TarotEffectTag;
+  count: number;
+}
+
+export interface TarotSuitCount {
+  suit: TarotSuitCategory;
+  count: number;
+}
+
+export interface TarotTargetCount {
+  target: TarotTargetCategory;
+  count: number;
+}
+
+export interface TarotCardAnalysis {
+  cardId: string;
+  cardNumber: string;
+  name: string;
+  quantity: number;
+  arcanaType: 'major' | 'minor';
+  suit: TarotSuitCategory | null;
+  targetType: TarotTargetCategory;
+  effectText: string;
+  derivedTags: TarotEffectTag[];
+  formatNotes: string[];
+}
+
+export interface TarotPackageProfile {
+  tarotCardCount: number;
+  distinctTarotCount: number;
+  majorArcanaCount: number;
+  minorArcanaCount: number;
+  suitCounts: TarotSuitCount[];
+  targetCounts: TarotTargetCount[];
+  effectTagCounts: TarotEffectTagCount[];
+  entries: TarotCardAnalysis[];
+  selectedMode: PlayerMode;
+  formatWarnings: string[];
+  formatNotes: string[];
+  factualSummary: string[];
+  analysisNotes: string[];
+}
+
+export type ScoreBand = 'early' | 'developing' | 'solid' | 'strong';
+
+export interface StrategyScore {
+  key:
+    | 'ascensionConsistency'
+    | 'disruptionControl'
+    | 'resilienceRecovery'
+    | 'formatFit'
+    | 'deadCardRisk'
+    | 'overallLabScore';
+  label: string;
+  score: number;
+  band: ScoreBand;
+  explanation: string;
+  contributingFactors: string[];
+  cautionFactors: string[];
+}
+
+export interface StrategyScoringWeights {
+  ascensionConsistency: Record<string, number>;
+  disruptionControl: Record<string, number>;
+  resilienceRecovery: Record<string, number>;
+  formatFit: Record<string, number>;
+  deadCardRisk: Record<string, number>;
+  overall: {
+    ascensionConsistency: number;
+    disruptionControl: number;
+    resilienceRecovery: number;
+    formatFit: number;
+    deadCardRiskPenalty: number;
+  };
+}
+
+export interface HeuristicAnalysis {
+  rulesetId: string;
+  selectedMode: PlayerMode;
+  isLegal: boolean;
+  isProvisional: boolean;
+  overallLabScore: StrategyScore;
+  scores: {
+    ascensionConsistency: StrategyScore;
+    disruptionControl: StrategyScore;
+    resilienceRecovery: StrategyScore;
+    formatFit: StrategyScore;
+    deadCardRisk: StrategyScore;
+  };
+  factualInputs: {
+    creatureCount: number;
+    tarotCount: number;
+    worshipCount: number;
+    imposterCount: number;
+    majorArcanaCount: number;
+    uniqueClanCount: number;
+    totalCreatureWorshipRequired: number;
+    formatWarningCount: number;
+    tarotTagCounts: TarotEffectTagCount[];
+  };
+  globalNotes: string[];
+  disclaimer: string;
 }
