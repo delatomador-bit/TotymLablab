@@ -1,4 +1,4 @@
-﻿export type Clan =
+export type Clan =
   | 'berserkers'
   | 'druids'
   | 'bards'
