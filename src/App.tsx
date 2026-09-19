@@ -4,6 +4,7 @@ import { loadCatalog } from './lib/catalog';
 import { validateTraditionalDeck } from './lib/traditionalDeckValidator';
 import { analyzeTarotSelection } from './lib/tarotValidator';
 import { analyzeWorshipSufficiency } from './lib/worshipSufficiencyAnalyzer';
+import { decklistText } from './lib/deckExport';
 import CreatureCorePanel from './components/CreatureCorePanel';
 import type {
   PlayerMode,
@@ -77,6 +78,7 @@ function App() {
   const [targetFilter, setTargetFilter] = useState<TargetFilter>('all');
   const [tarotSearch, setTarotSearch] = useState('');
   const [playerMode, setPlayerMode] = useState<PlayerMode>('1v1');
+  const [copyFeedback, setCopyFeedback] = useState<'success' | 'failure' | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -339,6 +341,36 @@ function App() {
 
   function retryCatalogLoad() {
     setCatalogLoadVersion((version) => version + 1);
+  }
+
+  async function copyDecklist() {
+    if (!validation.isValid) {
+      return;
+    }
+
+    const cardLookup = Object.fromEntries(
+      allCards.map((card) => [card.id, card])
+    );
+
+    const text = decklistText(
+      deck.name,
+      deck.cards,
+      cardLookup,
+      deck.playerMode,
+      validation.worshipPackage.allocations,
+      validation.counts.reservedImposters
+    );
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback('success');
+    } catch {
+      setCopyFeedback('failure');
+    }
+
+    setTimeout(() => {
+      setCopyFeedback(null);
+    }, 4000);
   }
 
   return (
@@ -1011,6 +1043,22 @@ function App() {
       </section>
 
       <footer className="actions">
+        {copyFeedback === 'success' && (
+          <span className="copy-feedback copy-success">Decklist copied to clipboard.</span>
+        )}
+        {copyFeedback === 'failure' && (
+          <span className="copy-feedback copy-failure">Could not copy the decklist. Please try again.</span>
+        )}
+
+        <button
+          className="button-secondary"
+          disabled={!validation.isValid}
+          onClick={copyDecklist}
+          type="button"
+        >
+          Copy Decklist
+        </button>
+
         <button
           className="button-secondary"
           disabled={isCatalogUnavailable}

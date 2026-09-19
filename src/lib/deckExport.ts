@@ -138,19 +138,25 @@ export function decklistText(
   name: string,
   cards: DeckCard[],
   cardLookup: CardLookup,
+  playerMode?: PlayerMode,
+  worshipAllocations?: Array<{ clan: string; quantity: number }>,
+  impostersCount?: number,
 ): string {
   const lines: string[] = [
     `// ${name}`,
     '// Traditional Mode',
-    '',
   ];
+
+  if (playerMode) {
+    lines.push(`// Player Mode: ${playerMode}`);
+  }
+
+  lines.push('');
 
   const order: Record<string, number> = {
     creature: 0,
     tarot: 1,
-    worship: 2,
-    imposter: 3,
-    relic: 4,
+    relic: 2,
   };
 
   const rows = cards
@@ -183,6 +189,18 @@ export function decklistText(
     lines.push(
       `${deckCard.quantity}x ${card.name} (${card.id})`,
     );
+  }
+
+  if (worshipAllocations && worshipAllocations.length > 0) {
+    lines.push('// WORSHIP');
+    for (const alloc of worshipAllocations) {
+      lines.push(`${alloc.quantity}x ${alloc.clan} Worship`);
+    }
+  }
+
+  if (impostersCount && impostersCount > 0) {
+    lines.push('// IMPOSTER');
+    lines.push(`${impostersCount}x Reserved Imposter`);
   }
 
   return lines.join('\n');
