@@ -560,8 +560,25 @@ button:disabled {
 .actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 24px;
+}
+
+.copy-feedback {
+  align-self: center;
+  margin-right: auto;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.copy-success {
+  color: #70d39b;
+}
+
+.copy-failure {
+  color: #e06b5b;
 }
 
 .button-primary,
@@ -644,6 +661,12 @@ button:disabled {
 
   .actions button {
     flex: 1;
+  }
+
+  .copy-feedback {
+    flex: 1 1 100%;
+    margin-right: 0;
+    text-align: center;
   }
 }
 
